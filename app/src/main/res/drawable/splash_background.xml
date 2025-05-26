@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background gradient -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:type="linear"
+                android:startColor="#667EEA"
+                android:centerColor="#764BA2"
+                android:endColor="#F093FB" />
+        </shape>
+    </item>
+
+    <!-- Centered logo -->
+    <item android:gravity="center">
+        <bitmap
+            android:src="@drawable/logo"
+            android:tileMode="disabled" />
+    </item>
+</layer-list>

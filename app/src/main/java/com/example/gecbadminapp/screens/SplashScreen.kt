@@ -1,4 +1,4 @@
-package com.example.gecbadminapp.admin.Screens
+package com.example.gecbadminapp.screens
 
 import android.content.Context
 import androidx.compose.animation.core.Animatable
@@ -12,7 +12,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,8 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.gecbadminapp.R
-import com.example.gecbadminapp.ui.theme.GradientEnd
-import com.example.gecbadminapp.ui.theme.GradientStart
 import com.example.gecbadminapp.utils.Constants
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay

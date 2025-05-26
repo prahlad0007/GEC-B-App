@@ -1,6 +1,5 @@
-package com.example.gecbadminapp.admin.Screens
+package com.example.gecbadminapp.screens
 
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -25,8 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.gecbadminapp.R
-import com.example.gecbadminapp.ui.theme.*
-import com.example.gecbadminapp.utils.Constants
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)

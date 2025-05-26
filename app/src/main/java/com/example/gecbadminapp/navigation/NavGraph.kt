@@ -41,8 +41,8 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.AdminDashBoard.route) {
             AdminDashBoard(navController)
         }
-        composable(Routes.ManageGallery.route) {
-            ManageGallery()
+        composable(Routes.ManageTimetable.route) {
+            ManageTimetable()
         }
         composable(Routes.ManageBanner.route) {
             ManageBanner(navController)
@@ -63,5 +63,10 @@ fun NavGraph(navController: NavHostController) {
                 onNavigateBack = { navController.navigateUp() }
             )
         }
+
+        composable(Routes.Website.route) { WebsiteScreen() }
+        composable(Routes.Notice.route) { NoticeScreen() }
+        composable(Routes.Timetable.route) { TimetableScreen() }
+        composable(Routes.Contact.route) { ContactScreen() }
     }
 }

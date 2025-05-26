@@ -1,15 +1,12 @@
 package com.example.gecbadminapp.screens
 
 import Faculty
-import android.widget.Toast
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
+
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
+
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -47,6 +44,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.gecbadminapp.R
 import com.example.gecbadminapp.model.BottomNavItem
 import com.example.gecbadminapp.model.NavItem
+import com.example.gecbadminapp.screens.TimetableScreen
 import com.example.gecbadminapp.ui.theme.GradientEnd
 import com.example.gecbadminapp.ui.theme.GradientStart
 import com.example.gecbadminapp.ui.theme.TransparentCard
@@ -68,7 +66,7 @@ fun BottomNav(navController: NavHostController) {
     val items = listOf(
         NavItem("Website", R.drawable.website),
         NavItem("Notice", R.drawable.notice),
-        NavItem("Notes", R.drawable.notes),
+        NavItem("Timetable", R.drawable.timetable),
         NavItem("Contact", R.drawable.contact)
     )
 
@@ -189,7 +187,46 @@ fun BottomNav(navController: NavHostController) {
                                         onClick = {
                                             selectedItemIndex.value = index
                                             scope.launch { drawerState.close() }
-                                            Toast.makeText(context, "${item.title} clicked", Toast.LENGTH_SHORT).show()
+
+                                            // Navigate to respective screens based on drawer item
+                                            when (item.title) {
+                                                "Website" -> {
+                                                    navController1.navigate(Routes.Website.route) {
+                                                        popUpTo(navController1.graph.findStartDestination().id) {
+                                                            saveState = true
+                                                        }
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                    }
+                                                }
+                                                "Notice" -> {
+                                                    navController1.navigate(Routes.Notice.route) {
+                                                        popUpTo(navController1.graph.findStartDestination().id) {
+                                                            saveState = true
+                                                        }
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                    }
+                                                }
+                                                "Timetable" -> {
+                                                    navController1.navigate(Routes.Timetable.route) {
+                                                        popUpTo(navController1.graph.findStartDestination().id) {
+                                                            saveState = true
+                                                        }
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                    }
+                                                }
+                                                "Contact" -> {
+                                                    navController1.navigate(Routes.Contact.route) {
+                                                        popUpTo(navController1.graph.findStartDestination().id) {
+                                                            saveState = true
+                                                        }
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                    }
+                                                }
+                                            }
                                         },
                                         icon = {
                                             Box(
@@ -470,6 +507,11 @@ fun BottomNav(navController: NavHostController) {
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
+                        // New drawer navigation routes
+                        composable(Routes.Website.route) { WebsiteScreen() }
+                        composable(Routes.Notice.route) { NoticeScreen() }
+                        composable(Routes.Timetable.route) { TimetableScreen() }
+                        composable(Routes.Contact.route) { ContactScreen() }
                     }
                 }
             }

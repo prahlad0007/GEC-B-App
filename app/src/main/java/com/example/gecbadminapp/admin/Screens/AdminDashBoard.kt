@@ -51,8 +51,8 @@ fun AdminDashBoard(navController: NavController) {
             "Upload and manage college banners"
         ),
         AdminItemModel(
-            "Manage Gallery",
-            Routes.ManageGallery.route,
+            "Manage Timetable",
+            Routes.ManageTimetable.route,
             Icons.Default.PhotoLibrary,
             Color(0xFF3B82F6),
             "Organize college photo gallery"

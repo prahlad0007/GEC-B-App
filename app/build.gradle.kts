@@ -85,6 +85,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+//    implementation ("com.github.barteksc:android-pdf-viewer:3.2.0-beta.1")
     // ✅ for Cloudinary-->
     implementation("com.squareup.okhttp3:okhttp:4.12.0") // or latest
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")

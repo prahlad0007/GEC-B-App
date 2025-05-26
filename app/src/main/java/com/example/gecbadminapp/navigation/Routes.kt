@@ -9,7 +9,6 @@ sealed class Routes(val route: String) {
     object AdminDashBoard : Routes("admin_dashboard")
     object ManageBanner : Routes("manage_banner")
     object ManageFaculty : Routes("manage_routes")
-    object ManageCollegeInfo : Routes("manage_college_info")
     object ManageEvents : Routes("manage_events")
     object ManageTimetable : Routes("manage_timetable")
     object Register : Routes("register")
@@ -18,6 +17,8 @@ sealed class Routes(val route: String) {
     object Timetable : Routes("Timetable")
     object Notice : Routes("notice")
     object Website : Routes("website")
+    object manageNotice : Routes("manage_notice")
+
 
 
 

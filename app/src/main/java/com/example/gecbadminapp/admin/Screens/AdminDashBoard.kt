@@ -65,9 +65,9 @@ fun AdminDashBoard(navController: NavController) {
             "Add and update faculty information"
         ),
         AdminItemModel(
-            "Manage College Info",
-            Routes.ManageCollegeInfo.route,
-            Icons.Default.Info,
+            "Manage College Notices",
+            Routes.manageNotice.route,
+            Icons.Default.AddCircle,
             Color(0xFF8B5CF6),
             "Update college details and information"
         ),
@@ -354,7 +354,7 @@ fun AdminDashBoard(navController: NavController) {
                                     label = "Update",
                                     color = Color(0xFFF59E0B)
                                 ) {
-                                    navController.navigate(Routes.ManageCollegeInfo.route)
+                                    navController.navigate(Routes.manageNotice.route)
                                 }
 
                                 QuickActionButton(

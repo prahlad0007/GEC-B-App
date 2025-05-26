@@ -47,8 +47,8 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.ManageBanner.route) {
             ManageBanner(navController)
         }
-        composable(Routes.ManageCollegeInfo.route) {
-            ManageCollegeInfo()
+        composable(Routes.manageNotice.route) {
+            ManageNotice()
         }
         composable(Routes.ManageFaculty.route) {
             ManageFaculty()

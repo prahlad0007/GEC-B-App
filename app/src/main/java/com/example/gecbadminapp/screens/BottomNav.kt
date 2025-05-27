@@ -1,12 +1,11 @@
 package com.example.gecbadminapp.screens
 
 import Faculty
-
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-
 import androidx.compose.animation.core.animateFloatAsState
-
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -44,6 +43,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.gecbadminapp.R
 import com.example.gecbadminapp.model.BottomNavItem
 import com.example.gecbadminapp.model.NavItem
+import com.example.gecbadminapp.screens.GECB_Communities.CommunityScreen
 import com.example.gecbadminapp.screens.TimetableScreen
 import com.example.gecbadminapp.ui.theme.GradientEnd
 import com.example.gecbadminapp.ui.theme.GradientStart
@@ -191,13 +191,9 @@ fun BottomNav(navController: NavHostController) {
                                             // Navigate to respective screens based on drawer item
                                             when (item.title) {
                                                 "Website" -> {
-                                                    navController1.navigate(Routes.Website.route) {
-                                                        popUpTo(navController1.graph.findStartDestination().id) {
-                                                            saveState = true
-                                                        }
-                                                        launchSingleTop = true
-                                                        restoreState = true
-                                                    }
+                                                    // Open website URL in browser instead of navigating to WebsiteScreen
+                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://gecbsp.ac.in/"))
+                                                    context.startActivity(intent)
                                                 }
                                                 "Notice" -> {
                                                     navController1.navigate(Routes.Notice.route) {
@@ -500,15 +496,14 @@ fun BottomNav(navController: NavHostController) {
                     ) {
                         composable(Routes.Home.route) { Home() }
                         composable(Routes.Faculty.route) { Faculty() }
-                        composable(Routes.Gallery.route) { Gallery() }
+                        composable(Routes.Community.route) { CommunityScreen() }
                         composable(Routes.AboutUs.route) { AboutUs() }
                         composable(Routes.Settings.route) {
                             SettingsScreen(
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
-                        // New drawer navigation routes
-                        composable(Routes.Website.route) { WebsiteScreen() }
+                        // Removed Website route since it now opens URL directly
                         composable(Routes.Notice.route) { NoticeScreen() }
                         composable(Routes.Timetable.route) { TimetableScreen() }
                         composable(Routes.Contact.route) { ContactScreen() }
@@ -524,9 +519,9 @@ fun MyBottomNav(navController: NavHostController) {
     val navStackEntry = navController.currentBackStackEntryAsState()
     val items = listOf(
         BottomNavItem("Home", R.drawable.home, Routes.Home.route),
-        BottomNavItem("Faculty", R.drawable.graduated, Routes.Faculty.route),
-        BottomNavItem("Gallery", R.drawable.gallery, Routes.Gallery.route),
-        BottomNavItem("About", R.drawable.info, Routes.AboutUs.route)
+        BottomNavItem("Faculty", R.drawable.faculty, Routes.Faculty.route),
+        BottomNavItem("Community", R.drawable.group, Routes.Community.route),
+        BottomNavItem("Developer", R.drawable.coding, Routes.AboutUs.route)
         // Removed Settings from bottom nav since it's now in top bar
     )
 

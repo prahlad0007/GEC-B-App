@@ -96,6 +96,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
 
+    implementation("androidx.compose.foundation:foundation:1.2.0")
 
 
 }

@@ -3,7 +3,7 @@ sealed class Routes(val route: String) {
     object Login : Routes("login")
     object Home : Routes("home")
     object Faculty : Routes("faculty")
-    object Gallery : Routes("gallery")
+    object Community : Routes("community")
     object AboutUs : Routes("about_us")
     object BottomNav : Routes("bottom_nav")
     object AdminDashBoard : Routes("admin_dashboard")
@@ -18,8 +18,4 @@ sealed class Routes(val route: String) {
     object Notice : Routes("notice")
     object Website : Routes("website")
     object manageNotice : Routes("manage_notice")
-
-
-
-
 }

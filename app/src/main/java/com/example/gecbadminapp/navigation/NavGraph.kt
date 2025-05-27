@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.gecbadminapp.admin.Screens.*
 import com.example.gecbadminapp.screens.*
+import com.example.gecbadminapp.screens.GECB_Communities.CommunityScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -22,8 +23,11 @@ fun NavGraph(navController: NavHostController) {
 
         // Authentication
         composable(Routes.Login.route) {
-            LoginScreen(navController)
+
+                LoginScreen(navController)
+
         }
+
         composable(Routes.Register.route) {
             RegisterScreen(navController)
         }
@@ -34,7 +38,7 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(Routes.Home.route) { Home() }
         composable(Routes.Faculty.route) { Faculty() }
-        composable(Routes.Gallery.route) { Gallery() }
+        composable(Routes.Community.route) { CommunityScreen() }
         composable(Routes.AboutUs.route) { AboutUs() }
 
         // Admin-side navigation

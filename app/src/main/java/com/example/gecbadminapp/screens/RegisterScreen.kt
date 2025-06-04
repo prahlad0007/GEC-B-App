@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +32,23 @@ import com.google.firebase.auth.FirebaseAuth
 fun RegisterScreen(navController: NavController) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
+    val configuration = LocalConfiguration.current
+
+    // Responsive sizing based on screen width
+    val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
+    val isCompact = screenWidth < 600.dp
+    val isSmallHeight = screenHeight < 700.dp
+
+    // Dynamic sizing values
+    val horizontalPadding = if (isCompact) 16.dp else 32.dp
+    val cardPadding = if (isCompact) 20.dp else 32.dp
+    val logoSize = if (isCompact) 60.dp else 80.dp
+    val titleFontSize = if (isCompact) 18.sp else 22.sp
+    val subtitleFontSize = if (isCompact) 14.sp else 16.sp
+    val headerFontSize = if (isCompact) 22.sp else 26.sp
+    val verticalSpacing = if (isSmallHeight) 8.dp else 16.dp
+    val fieldSpacing = if (isSmallHeight) 12.dp else 16.dp
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
@@ -62,99 +80,107 @@ fun RegisterScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(24.dp),
+                .padding(horizontal = horizontalPadding)
+                .padding(vertical = if (isSmallHeight) 16.dp else 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            if (!isSmallHeight) {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-            // Enhanced Header Section with College Logo
+            // Responsive Header Section
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier.padding(bottom = if (isSmallHeight) 16.dp else 24.dp)
             ) {
-                // College Logo with enhanced styling
+                // College Logo
                 Card(
                     shape = CircleShape,
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(16.dp),
-                    modifier = Modifier.shadow(24.dp, CircleShape)
+                    elevation = CardDefaults.cardElevation(if (isCompact) 12.dp else 16.dp),
+                    modifier = Modifier.shadow(if (isCompact) 16.dp else 24.dp, CircleShape)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.logo),
                         contentDescription = "GECB Logo",
                         modifier = Modifier
-                            .size(80.dp)
-                            .padding(12.dp)
+                            .size(logoSize)
+                            .padding(if (isCompact) 8.dp else 12.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(if (isCompact) 12.dp else 20.dp))
 
-                // Enhanced College Title
+                // College Title - Responsive text sizing
                 Text(
                     text = "Government Engineering College",
-                    fontSize = 22.sp,
+                    fontSize = titleFontSize,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    lineHeight = if (isCompact) 20.sp else 24.sp,
+                    modifier = Modifier.fillMaxWidth(0.9f)
                 )
 
                 Text(
                     text = "Bilaspur (C.G.)",
-                    fontSize = 16.sp,
+                    fontSize = subtitleFontSize,
                     fontWeight = FontWeight.Medium,
                     color = Color.White.copy(alpha = 0.9f),
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(verticalSpacing))
 
-                // Enhanced Sanskrit Slogan
+                // Sanskrit Slogan
                 Card(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(if (isCompact) 16.dp else 20.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White.copy(alpha = 0.2f)
                     )
                 ) {
                     Text(
                         text = "योग कर्मसु कौशलम",
-                        fontSize = 14.sp,
+                        fontSize = if (isCompact) 12.sp else 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                        modifier = Modifier.padding(
+                            horizontal = if (isCompact) 16.dp else 20.dp,
+                            vertical = if (isCompact) 8.dp else 10.dp
+                        )
                     )
                 }
             }
 
-            // Enhanced Registration Card
+            // Registration Card with responsive sizing
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(20.dp, RoundedCornerShape(30.dp)),
-                shape = RoundedCornerShape(30.dp),
+                    .shadow(if (isCompact) 16.dp else 20.dp, RoundedCornerShape(if (isCompact) 24.dp else 30.dp)),
+                shape = RoundedCornerShape(if (isCompact) 24.dp else 30.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(16.dp)
+                elevation = CardDefaults.cardElevation(if (isCompact) 12.dp else 16.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(32.dp),
+                    modifier = Modifier.padding(cardPadding),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Welcome Section
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(bottom = 20.dp)
+                        modifier = Modifier.padding(bottom = if (isSmallHeight) 12.dp else 20.dp)
                     ) {
                         Icon(
                             Icons.Default.PersonAdd,
                             contentDescription = "Register",
                             tint = Color(0xFF10B981),
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(if (isCompact) 24.dp else 28.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(if (isCompact) 8.dp else 12.dp))
                         Text(
                             text = "Create Account",
-                            fontSize = 26.sp,
+                            fontSize = headerFontSize,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1F2937)
                         )
@@ -162,407 +188,204 @@ fun RegisterScreen(navController: NavController) {
 
                     Text(
                         text = "Join the GECB community today",
-                        fontSize = 16.sp,
+                        fontSize = if (isCompact) 14.sp else 16.sp,
                         color = Color(0xFF6B7280),
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 28.dp)
+                        modifier = Modifier.padding(bottom = if (isSmallHeight) 16.dp else 24.dp)
                     )
 
-                    // Enhanced Name Fields Row
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // First Name Field
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            modifier = Modifier.weight(1f)
+                    // Name Fields Row - Responsive layout
+                    if (isCompact) {
+                        // Stack vertically on small screens
+                        EnhancedTextField(
+                            value = firstName,
+                            onValueChange = { firstName = it },
+                            label = "First Name",
+                            icon = Icons.Default.Person,
+                            iconTint = Color(0xFF667eea),
+                            isCompact = isCompact,
+                            modifier = Modifier.padding(bottom = fieldSpacing)
+                        )
+
+                        EnhancedTextField(
+                            value = lastName,
+                            onValueChange = { lastName = it },
+                            label = "Last Name",
+                            icon = Icons.Default.Person,
+                            iconTint = Color(0xFF667eea),
+                            isCompact = isCompact,
+                            modifier = Modifier.padding(bottom = fieldSpacing)
+                        )
+                    } else {
+                        // Side by side on larger screens
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = fieldSpacing),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            OutlinedTextField(
+                            EnhancedTextField(
                                 value = firstName,
                                 onValueChange = { firstName = it },
-                                label = {
-                                    Text(
-                                        "First Name",
-                                        color = Color(0xFF6B7280)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Person,
-                                        contentDescription = "First Name",
-                                        tint = Color(0xFF667eea)
-                                    )
-                                },
-                                singleLine = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(Color.Transparent),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF667eea),
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedTextColor = Color(0xFF1F2937),
-                                    unfocusedTextColor = Color(0xFF1F2937)
-                                ),
-                                shape = RoundedCornerShape(16.dp)
+                                label = "First Name",
+                                icon = Icons.Default.Person,
+                                iconTint = Color(0xFF667eea),
+                                isCompact = isCompact,
+                                modifier = Modifier.weight(1f)
                             )
-                        }
 
-                        // Last Name Field
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            OutlinedTextField(
+                            EnhancedTextField(
                                 value = lastName,
                                 onValueChange = { lastName = it },
-                                label = {
-                                    Text(
-                                        "Last Name",
-                                        color = Color(0xFF6B7280)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Person,
-                                        contentDescription = "Last Name",
-                                        tint = Color(0xFF667eea)
-                                    )
-                                },
-                                singleLine = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(Color.Transparent),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF667eea),
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedTextColor = Color(0xFF1F2937),
-                                    unfocusedTextColor = Color(0xFF1F2937)
-                                ),
-                                shape = RoundedCornerShape(16.dp)
+                                label = "Last Name",
+                                icon = Icons.Default.Person,
+                                iconTint = Color(0xFF667eea),
+                                isCompact = isCompact,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
 
-                    // Enhanced Year Fields Row
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Graduation Year Field
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            modifier = Modifier.weight(1f)
+                    // Year Fields Row - Responsive layout
+                    if (isCompact) {
+                        // Stack vertically on small screens
+                        EnhancedTextField(
+                            value = graduationYear,
+                            onValueChange = { graduationYear = it },
+                            label = "Graduation Year",
+                            icon = Icons.Default.School,
+                            iconTint = Color(0xFF10B981),
+                            keyboardType = KeyboardType.Number,
+                            isCompact = isCompact,
+                            modifier = Modifier.padding(bottom = fieldSpacing)
+                        )
+
+                        EnhancedTextField(
+                            value = passoutYear,
+                            onValueChange = { passoutYear = it },
+                            label = "Passout Year",
+                            icon = Icons.Default.CalendarToday,
+                            iconTint = Color(0xFF10B981),
+                            keyboardType = KeyboardType.Number,
+                            isCompact = isCompact,
+                            modifier = Modifier.padding(bottom = fieldSpacing)
+                        )
+                    } else {
+                        // Side by side on larger screens
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = fieldSpacing),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            OutlinedTextField(
+                            EnhancedTextField(
                                 value = graduationYear,
                                 onValueChange = { graduationYear = it },
-                                label = {
-                                    Text(
-                                        "Graduation Year",
-                                        color = Color(0xFF6B7280)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.School,
-                                        contentDescription = "Graduation Year",
-                                        tint = Color(0xFF10B981)
-                                    )
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(Color.Transparent),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF10B981),
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedTextColor = Color(0xFF1F2937),
-                                    unfocusedTextColor = Color(0xFF1F2937)
-                                ),
-                                shape = RoundedCornerShape(16.dp)
+                                label = "Graduation Year",
+                                icon = Icons.Default.School,
+                                iconTint = Color(0xFF10B981),
+                                keyboardType = KeyboardType.Number,
+                                isCompact = isCompact,
+                                modifier = Modifier.weight(1f)
                             )
-                        }
 
-                        // Passout Year Field
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            OutlinedTextField(
+                            EnhancedTextField(
                                 value = passoutYear,
                                 onValueChange = { passoutYear = it },
-                                label = {
-                                    Text(
-                                        "Passout Year",
-                                        color = Color(0xFF6B7280)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.CalendarToday,
-                                        contentDescription = "Passout Year",
-                                        tint = Color(0xFF10B981)
-                                    )
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(Color.Transparent),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF10B981),
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedTextColor = Color(0xFF1F2937),
-                                    unfocusedTextColor = Color(0xFF1F2937)
-                                ),
-                                shape = RoundedCornerShape(16.dp)
+                                label = "Passout Year",
+                                icon = Icons.Default.CalendarToday,
+                                iconTint = Color(0xFF10B981),
+                                keyboardType = KeyboardType.Number,
+                                isCompact = isCompact,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
 
-                    // Enhanced Email Field
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                        elevation = CardDefaults.cardElevation(2.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = {
-                                Text(
-                                    "Email Address",
-                                    color = Color(0xFF6B7280)
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Email,
-                                    contentDescription = "Email",
-                                    tint = Color(0xFF667eea)
-                                )
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.Transparent),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF667eea),
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedTextColor = Color(0xFF1F2937),
-                                unfocusedTextColor = Color(0xFF1F2937)
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                    }
+                    // Email Field
+                    EnhancedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = "Email Address",
+                        icon = Icons.Default.Email,
+                        iconTint = Color(0xFF667eea),
+                        keyboardType = KeyboardType.Email,
+                        isCompact = isCompact,
+                        modifier = Modifier.padding(bottom = fieldSpacing)
+                    )
 
-                    // Enhanced Password Field
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                        elevation = CardDefaults.cardElevation(2.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = {
-                                Text(
-                                    "Password",
-                                    color = Color(0xFF6B7280)
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Lock,
-                                    contentDescription = "Password",
-                                    tint = Color(0xFFEF4444)
-                                )
-                            },
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(
-                                        imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                        contentDescription = "Toggle Password",
-                                        tint = Color(0xFF6B7280)
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.Transparent),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFEF4444),
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedTextColor = Color(0xFF1F2937),
-                                unfocusedTextColor = Color(0xFF1F2937)
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                    }
+                    // Password Field
+                    EnhancedPasswordField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = "Password",
+                        isVisible = passwordVisible,
+                        onVisibilityToggle = { passwordVisible = !passwordVisible },
+                        isCompact = isCompact,
+                        modifier = Modifier.padding(bottom = fieldSpacing)
+                    )
 
-                    // Enhanced Confirm Password Field
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
-                        elevation = CardDefaults.cardElevation(2.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 24.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = confirmPassword,
-                            onValueChange = { confirmPassword = it },
-                            label = {
-                                Text(
-                                    "Confirm Password",
-                                    color = Color(0xFF6B7280)
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Lock,
-                                    contentDescription = "Confirm Password",
-                                    tint = Color(0xFFEF4444)
-                                )
-                            },
-                            visualTransformation = if (confirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { confirmVisible = !confirmVisible }) {
-                                    Icon(
-                                        imageVector = if (confirmVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                        contentDescription = "Toggle Confirm Password",
-                                        tint = Color(0xFF6B7280)
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.Transparent),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFEF4444),
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedTextColor = Color(0xFF1F2937),
-                                unfocusedTextColor = Color(0xFF1F2937)
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                    }
+                    // Confirm Password Field
+                    EnhancedPasswordField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = "Confirm Password",
+                        isVisible = confirmVisible,
+                        onVisibilityToggle = { confirmVisible = !confirmVisible },
+                        isCompact = isCompact,
+                        modifier = Modifier.padding(bottom = if (isSmallHeight) 16.dp else 24.dp)
+                    )
 
-                    // Enhanced Register Button
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .clickable(enabled = !isLoading) {
-                                if (!isLoading) {
-                                    when {
-                                        firstName.isBlank() || lastName.isBlank() || email.isBlank() ||
-                                                graduationYear.isBlank() || passoutYear.isBlank() || password.length < 6 -> {
-                                            Toast.makeText(context, "Please fill all fields properly", Toast.LENGTH_SHORT).show()
-                                        }
+                    // Register Button
+                    EnhancedButton(
+                        onClick = {
+                            if (!isLoading) {
+                                when {
+                                    firstName.isBlank() || lastName.isBlank() || email.isBlank() ||
+                                            graduationYear.isBlank() || passoutYear.isBlank() || password.length < 6 -> {
+                                        Toast.makeText(context, "Please fill all fields properly", Toast.LENGTH_SHORT).show()
+                                    }
 
-                                        password != confirmPassword -> {
-                                            Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
-                                        }
+                                    password != confirmPassword -> {
+                                        Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+                                    }
 
-                                        else -> {
-                                            isLoading = true
-                                            auth.createUserWithEmailAndPassword(email.trim(), password)
-                                                .addOnCompleteListener { task ->
-                                                    if (task.isSuccessful) {
-                                                        Toast.makeText(context, "Registration successful! Welcome to GECB", Toast.LENGTH_SHORT).show()
-                                                        navController.navigate(Routes.Login.route) {
-                                                            popUpTo(Routes.Register.route) { inclusive = true }
-                                                        }
-                                                    } else {
-                                                        Toast.makeText(
-                                                            context,
-                                                            task.exception?.message ?: "Registration failed",
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
+                                    else -> {
+                                        isLoading = true
+                                        auth.createUserWithEmailAndPassword(email.trim(), password)
+                                            .addOnCompleteListener { task ->
+                                                if (task.isSuccessful) {
+                                                    Toast.makeText(context, "Registration successful! Welcome to GECB", Toast.LENGTH_SHORT).show()
+                                                    navController.navigate(Routes.Login.route) {
+                                                        popUpTo(Routes.Register.route) { inclusive = true }
                                                     }
-                                                    isLoading = false
+                                                } else {
+                                                    Toast.makeText(
+                                                        context,
+                                                        task.exception?.message ?: "Registration failed",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
                                                 }
-                                        }
+                                                isLoading = false
+                                            }
                                     }
                                 }
                             }
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(
-                                            Color(0xFF10B981),
-                                            Color(0xFF059669)
-                                        )
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            } else {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.PersonAdd,
-                                        contentDescription = "Register",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        "Create Account",
-                                        color = Color.White,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                        }
-                    }
+                        },
+                        isLoading = isLoading,
+                        text = "Create Account",
+                        icon = Icons.Default.PersonAdd,
+                        isCompact = isCompact
+                    )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(if (isSmallHeight) 16.dp else 24.dp))
 
-                    // Divider with text
+                    // Divider
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 16.dp)
+                            .padding(vertical = if (isSmallHeight) 8.dp else 16.dp)
                     ) {
                         Box(
                             modifier = Modifier
@@ -574,7 +397,7 @@ fun RegisterScreen(navController: NavController) {
                             text = "or",
                             color = Color(0xFF6B7280),
                             modifier = Modifier.padding(horizontal = 16.dp),
-                            fontSize = 14.sp
+                            fontSize = if (isCompact) 12.sp else 14.sp
                         )
                         Box(
                             modifier = Modifier
@@ -584,9 +407,9 @@ fun RegisterScreen(navController: NavController) {
                         )
                     }
 
-                    // Enhanced Login Section
+                    // Login Section
                     Card(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(if (isCompact) 12.dp else 16.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = Color(0xFFF8FAFC)
                         ),
@@ -600,7 +423,7 @@ fun RegisterScreen(navController: NavController) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(if (isCompact) 12.dp else 16.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -608,18 +431,18 @@ fun RegisterScreen(navController: NavController) {
                                 Icons.Default.Login,
                                 contentDescription = "Login",
                                 tint = Color(0xFF667eea),
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(if (isCompact) 16.dp else 20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 "Already have an account? ",
                                 color = Color(0xFF6B7280),
-                                fontSize = 14.sp
+                                fontSize = if (isCompact) 12.sp else 14.sp
                             )
                             Text(
                                 "Sign In",
                                 color = Color(0xFF667eea),
-                                fontSize = 14.sp,
+                                fontSize = if (isCompact) 12.sp else 14.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -627,38 +450,213 @@ fun RegisterScreen(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            if (!isSmallHeight) {
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // Enhanced Footer
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+                // Footer
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Secure Registration Portal",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = if (isCompact) 10.sp else 12.sp
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Security,
+                            contentDescription = "Secure",
+                            tint = Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(if (isCompact) 10.dp else 12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Protected by Firebase Authentication",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = if (isCompact) 8.sp else 10.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EnhancedTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    isCompact: Boolean = false
+) {
+    Card(
+        shape = RoundedCornerShape(if (isCompact) 12.dp else 16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+        elevation = CardDefaults.cardElevation(2.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = {
                 Text(
-                    text = "Secure Registration Portal",
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 12.sp
+                    label,
+                    color = Color(0xFF6B7280),
+                    fontSize = if (isCompact) 12.sp else 14.sp
                 )
+            },
+            leadingIcon = {
+                Icon(
+                    icon,
+                    contentDescription = label,
+                    tint = iconTint,
+                    modifier = Modifier.size(if (isCompact) 18.dp else 20.dp)
+                )
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.Transparent),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = iconTint,
+                unfocusedBorderColor = Color.Transparent,
+                focusedTextColor = Color(0xFF1F2937),
+                unfocusedTextColor = Color(0xFF1F2937)
+            ),
+            shape = RoundedCornerShape(if (isCompact) 12.dp else 16.dp),
+            textStyle = androidx.compose.ui.text.TextStyle(fontSize = if (isCompact) 14.sp else 16.sp)
+        )
+    }
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EnhancedPasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    isVisible: Boolean,
+    onVisibilityToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    isCompact: Boolean = false
+) {
+    Card(
+        shape = RoundedCornerShape(if (isCompact) 12.dp else 16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+        elevation = CardDefaults.cardElevation(2.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = {
+                Text(
+                    label,
+                    color = Color(0xFF6B7280),
+                    fontSize = if (isCompact) 12.sp else 14.sp
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    Icons.Default.Lock,
+                    contentDescription = label,
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(if (isCompact) 18.dp else 20.dp)
+                )
+            },
+            visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = onVisibilityToggle) {
+                    Icon(
+                        imageVector = if (isVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = "Toggle Password",
+                        tint = Color(0xFF6B7280),
+                        modifier = Modifier.size(if (isCompact) 18.dp else 20.dp)
+                    )
+                }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.Transparent),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFEF4444),
+                unfocusedBorderColor = Color.Transparent,
+                focusedTextColor = Color(0xFF1F2937),
+                unfocusedTextColor = Color(0xFF1F2937)
+            ),
+            shape = RoundedCornerShape(if (isCompact) 12.dp else 16.dp),
+            textStyle = androidx.compose.ui.text.TextStyle(fontSize = if (isCompact) 14.sp else 16.sp)
+        )
+    }
+}
+
+@Composable
+fun EnhancedButton(
+    onClick: () -> Unit,
+    isLoading: Boolean,
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isCompact: Boolean = false
+) {
+    Card(
+        shape = RoundedCornerShape(if (isCompact) 12.dp else 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(if (isCompact) 48.dp else 56.dp)
+            .clickable(enabled = !isLoading) { onClick() }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFF10B981),
+                            Color(0xFF059669)
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(if (isCompact) 20.dp else 24.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 4.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        Icons.Default.Security,
-                        contentDescription = "Secure",
-                        tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(12.dp)
+                        icon,
+                        contentDescription = text,
+                        tint = Color.White,
+                        modifier = Modifier.size(if (isCompact) 16.dp else 20.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Protected by Firebase Authentication",
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 10.sp
+                        text,
+                        color = Color.White,
+                        fontSize = if (isCompact) 14.sp else 16.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

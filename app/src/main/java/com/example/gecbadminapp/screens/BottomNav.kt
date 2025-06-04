@@ -1,8 +1,6 @@
 package com.example.gecbadminapp.screens
-
 import Faculty
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -22,11 +20,18 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,13 +49,273 @@ import com.example.gecbadminapp.R
 import com.example.gecbadminapp.model.BottomNavItem
 import com.example.gecbadminapp.model.NavItem
 import com.example.gecbadminapp.screens.GECB_Communities.CommunityScreen
-import com.example.gecbadminapp.screens.TimetableScreen
-import com.example.gecbadminapp.ui.theme.GradientEnd
-import com.example.gecbadminapp.ui.theme.GradientStart
-import com.example.gecbadminapp.ui.theme.TransparentCard
-import com.example.gecbadminapp.ui.theme.WhiteText
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.TextUnit
+import androidx.core.net.toUri
+
+@Composable
+fun ResponsiveTopAppBar(
+    onMenuClick: () -> Unit,
+    onSettingsClick: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val windowInsets = WindowInsets.systemBars
+    val screenWidth = configuration.screenWidthDp.dp
+    val isCompact = screenWidth < 600.dp
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val topInset = with(density) { windowInsets.getTop(density).toDp() }
+    val appBarHeight = when {
+        isLandscape && isCompact -> 60.dp // Landscape on phones
+        isCompact -> 70.dp // Portrait on phones
+        else -> 80.dp // Tablets
+    }
+    val iconSize = when {
+        isLandscape && isCompact -> 22.dp
+        isCompact -> 24.dp
+        else -> 28.dp
+    }
+
+    val iconButtonSize = when {
+        isLandscape && isCompact -> 42.dp
+        isCompact -> 46.dp
+        else -> 52.dp
+    }
+
+    val titleSize = when {
+        isLandscape && isCompact -> 16.sp
+        isCompact -> 18.sp
+        else -> 22.sp
+    }
+
+    val horizontalPadding = when {
+        isLandscape && isCompact -> 12.dp
+        isCompact -> 16.dp
+        else -> 20.dp
+    }
+
+    // Animation for app bar
+    val animatedElevation by animateFloatAsState(
+        targetValue = 8f,
+        animationSpec = tween(300),
+        label = "elevation_animation"
+    )
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(appBarHeight + topInset)
+            .statusBarsPadding()
+            .graphicsLayer {
+                shadowElevation = animatedElevation
+            },
+        color = Color.Transparent
+    ) {
+        Column {
+            // Status bar space (handled by statusBarsPadding)
+
+            // Main app bar content
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(appBarHeight)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFF667eea),
+                                Color(0xFF764ba2)
+                            )
+                        )
+                    )
+                    .animateContentSize()
+            ) {
+                // Glass morphism overlay for modern look
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Color.White.copy(alpha = 0.1f)
+                        )
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = horizontalPadding),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Left side - Menu button
+                    ResponsiveIconButton(
+                        onClick = onMenuClick,
+                        iconRes = R.drawable.menu,
+                        contentDescription = "Menu",
+                        size = iconButtonSize,
+                        iconSize = iconSize,
+                        isCompact = isCompact
+                    )
+
+                    // Center - Title with responsive layout
+                    ResponsiveTitleSection(
+                        title = "GEC Bilaspur",
+                        subtitle = if (isLandscape && isCompact) null else "Student Portal",
+                        titleSize = titleSize,
+                        isCompact = isCompact,
+                        isLandscape = isLandscape,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Right side - Settings button
+                    ResponsiveIconButton(
+                        onClick = onSettingsClick,
+                        iconRes = R.drawable.settings,
+                        contentDescription = "Settings",
+                        size = iconButtonSize,
+                        iconSize = iconSize,
+                        isCompact = isCompact
+                    )
+                }
+
+                // Bottom border with gradient
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.White.copy(alpha = 0.3f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ResponsiveIconButton(
+    onClick: () -> Unit,
+    iconRes: Int,
+    contentDescription: String,
+    size: Dp,
+    iconSize: Dp,
+    isCompact: Boolean
+) {
+    // Animation states
+    val animatedScale by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "button_scale"
+    )
+
+    Card(
+        modifier = Modifier
+            .size(size)
+            .scale(animatedScale)
+            .clickable(
+                onClick = onClick,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ),
+        shape = CircleShape,
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.15f)
+        ),
+        elevation = CardDefaults.cardElevation(
+            if (isCompact) 4.dp else 6.dp
+        ),
+        border = BorderStroke(
+            0.5.dp,
+            Color.White.copy(alpha = 0.2f)
+        )
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = contentDescription,
+                modifier = Modifier.size(iconSize),
+                tint = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+fun ResponsiveTitleSection(
+    title: String,
+    subtitle: String?,
+    titleSize: TextUnit,
+    isCompact: Boolean,
+    isLandscape: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Main title with responsive styling
+        Text(
+            text = title,
+            color = Color.White,
+            fontSize = titleSize,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.titleLarge.copy(
+                shadow = androidx.compose.ui.graphics.Shadow(
+                    color = Color.Black.copy(alpha = 0.3f),
+                    offset = androidx.compose.ui.geometry.Offset(1f, 1f),
+                    blurRadius = 3f
+                )
+            )
+        )
+
+        // Subtitle (hidden in landscape compact mode)
+        subtitle?.let { sub ->
+            if (!isLandscape || !isCompact) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = sub,
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = when {
+                        isCompact -> 12.sp
+                        else -> 14.sp
+                    },
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = Color.Black.copy(alpha = 0.2f),
+                            offset = androidx.compose.ui.geometry.Offset(0.5f, 0.5f),
+                            blurRadius = 2f
+                        )
+                    )
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,13 +343,12 @@ fun BottomNav(navController: NavHostController) {
                 ModalDrawerSheet(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(320.dp), // Increased width slightly
+                        .width(320.dp),
                     drawerContainerColor = Color.White,
                     drawerContentColor = Color(0xFF1F2937)
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxHeight()
+                        modifier = Modifier.fillMaxHeight()
                     ) {
                         // Enhanced Header Section with gradient background
                         Box(
@@ -188,11 +452,10 @@ fun BottomNav(navController: NavHostController) {
                                             selectedItemIndex.value = index
                                             scope.launch { drawerState.close() }
 
-                                            // Navigate to respective screens based on drawer item
                                             when (item.title) {
                                                 "Website" -> {
-                                                    // Open website URL in browser instead of navigating to WebsiteScreen
-                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://gecbsp.ac.in/"))
+                                                    val intent = Intent(Intent.ACTION_VIEW,
+                                                        "https://gecbsp.ac.in/".toUri())
                                                     context.startActivity(intent)
                                                 }
                                                 "Notice" -> {
@@ -253,17 +516,15 @@ fun BottomNav(navController: NavHostController) {
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                            // Divider
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 12.dp),
                                 color = Color(0xFFE5E7EB)
                             )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                            // Settings Section
                             Text(
                                 text = "Settings",
                                 fontSize = 16.sp,
@@ -272,69 +533,7 @@ fun BottomNav(navController: NavHostController) {
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                             )
 
-                            // Theme Toggle
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFB)),
-                                elevation = CardDefaults.cardElevation(0.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .background(Color(0xFFF59E0B).copy(alpha = 0.2f), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.theme),
-                                            contentDescription = "Theme Toggle",
-                                            modifier = Modifier.size(20.dp),
-                                            tint = Color(0xFFF59E0B)
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    Column(
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text(
-                                            "Dark Theme",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF374151),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            "Switch app appearance",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Color(0xFF6B7280),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    Switch(
-                                        checked = isDarkTheme,
-                                        onCheckedChange = { isDarkTheme = it },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = Color(0xFF667eea),
-                                            checkedTrackColor = Color(0xFF667eea).copy(alpha = 0.5f)
-                                        )
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
                             // Sign Out Button
                             Card(
@@ -388,7 +587,6 @@ fun BottomNav(navController: NavHostController) {
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Footer
                             Text(
                                 text = "GEC Bilaspur v1.0",
                                 fontSize = 12.sp,
@@ -405,81 +603,19 @@ fun BottomNav(navController: NavHostController) {
             content = {
                 Scaffold(
                     topBar = {
-                        Surface(
-                            shadowElevation = 4.dp,
-                            color = TransparentCard
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(80.dp)
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            colors = listOf(
-                                                Color(0xFF667eea),
-                                                Color(0xFF764ba2)
-                                            )
-                                        )
-                                    ),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    IconButton(
-                                        onClick = { scope.launch { drawerState.open() } },
-                                        modifier = Modifier.size(48.dp)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.menu),
-                                            contentDescription = "Menu",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(24.dp)
-                                        )
+                        // Use the new responsive top app bar
+                        ResponsiveTopAppBar(
+                            onMenuClick = { scope.launch { drawerState.open() } },
+                            onSettingsClick = {
+                                navController1.navigate(Routes.Settings.route) {
+                                    popUpTo(navController1.graph.findStartDestination().id) {
+                                        saveState = true
                                     }
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
-                                    Column(
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "GEC Bilaspur",
-                                            color = Color.White,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    // Added Settings Icon to the right side
-                                    IconButton(
-                                        onClick = {
-                                            navController1.navigate(Routes.Settings.route) {
-                                                popUpTo(navController1.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        },
-                                        modifier = Modifier.size(48.dp)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.settings),
-                                            contentDescription = "Settings",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
                             }
-                        }
+                        )
                     },
                     bottomBar = {
                         MyBottomNav(navController = navController1)
@@ -503,7 +639,6 @@ fun BottomNav(navController: NavHostController) {
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
-                        // Removed Website route since it now opens URL directly
                         composable(Routes.Notice.route) { NoticeScreen() }
                         composable(Routes.Timetable.route) { TimetableScreen() }
                         composable(Routes.Contact.route) { ContactScreen() }
@@ -517,103 +652,185 @@ fun BottomNav(navController: NavHostController) {
 @Composable
 fun MyBottomNav(navController: NavHostController) {
     val navStackEntry = navController.currentBackStackEntryAsState()
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val windowInsets = WindowInsets.systemBars
+
+    // Calculate responsive dimensions
+    val screenWidth = configuration.screenWidthDp.dp
+    val isCompact = screenWidth < 600.dp
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    // Get bottom inset for navigation bar
+    val bottomInset = with(density) { windowInsets.getBottom(density).toDp() }
+
+    // Responsive sizing
+    val navHeight = when {
+        isLandscape && isCompact -> 70.dp // Landscape on phones
+        isCompact -> 85.dp // Portrait on phones
+        else -> 95.dp // Tablets
+    }
+
+    val cardPadding = when {
+        isLandscape && isCompact -> 6.dp
+        isCompact -> 8.dp
+        else -> 12.dp
+    }
+
+    val iconSize = when {
+        isLandscape && isCompact -> 22.dp
+        isCompact -> 24.dp
+        else -> 26.dp
+    }
+
+    val containerSize = when {
+        isLandscape && isCompact -> 42.dp
+        isCompact -> 46.dp
+        else -> 50.dp
+    }
+
     val items = listOf(
         BottomNavItem("Home", R.drawable.home, Routes.Home.route),
         BottomNavItem("Faculty", R.drawable.faculty, Routes.Faculty.route),
         BottomNavItem("Community", R.drawable.group, Routes.Community.route),
         BottomNavItem("Developer", R.drawable.coding, Routes.AboutUs.route)
-        // Removed Settings from bottom nav since it's now in top bar
     )
 
-    // Enhanced bottom navigation with increased height
+    // Adaptive surface with proper insets
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(110.dp), // Increased height from 90dp to 110dp
-        shadowElevation = 16.dp,
+            .height(navHeight + bottomInset)
+            .navigationBarsPadding(), // Handle system navigation bar
+        shadowElevation = if (isCompact) 12.dp else 16.dp,
         color = Color.Transparent
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.98f),
-                            Color(0xFFF8FAFC).copy(alpha = 0.95f)
+        Column {
+            // Main navigation content
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(navHeight)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.98f),
+                                Color(0xFFF8FAFC).copy(alpha = 0.95f)
+                            )
                         )
                     )
-                )
-                .padding(horizontal = 12.dp, vertical = 12.dp) // Increased padding
-        ) {
-            // Enhanced background card with better contrast
-            Card(
-                modifier = Modifier.fillMaxSize(),
-                shape = RoundedCornerShape(32.dp), // Increased corner radius
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                ),
-                elevation = CardDefaults.cardElevation(12.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    Color(0xFFE2E8F0)
-                )
+                    .padding(horizontal = cardPadding, vertical = cardPadding)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp, vertical = 12.dp), // Increased vertical padding
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                // Responsive navigation card
+                Card(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RoundedCornerShape(
+                        when {
+                            isLandscape && isCompact -> 20.dp
+                            isCompact -> 24.dp
+                            else -> 28.dp
+                        }
+                    ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        if (isCompact) 8.dp else 12.dp
+                    ),
+                    border = BorderStroke(
+                        0.5.dp,
+                        Color(0xFFE2E8F0)
+                    )
                 ) {
-                    items.forEach { item ->
-                        val selected = item.route == navStackEntry.value?.destination?.route
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                horizontal = if (isCompact) 4.dp else 8.dp,
+                                vertical = if (isLandscape && isCompact) 6.dp else 8.dp
+                            ),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        items.forEach { item ->
+                            val selected = item.route == navStackEntry.value?.destination?.route
 
-                        // Enhanced nav item with better visibility
-                        EnhancedNavItem(
-                            item = item,
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                            ResponsiveNavItem(
+                                item = item,
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
+                                },
+                                iconSize = iconSize,
+                                containerSize = containerSize,
+                                isCompact = isCompact,
+                                isLandscape = isLandscape
+                            )
+                        }
                     }
                 }
+            }
+
+            // Bottom safe area (for devices with navigation bar)
+            if (bottomInset > 0.dp) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(bottomInset)
+                        .background(Color.White)
+                )
             }
         }
     }
 }
 
 @Composable
-fun EnhancedNavItem(
+fun ResponsiveNavItem(
     item: BottomNavItem,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    iconSize: Dp,
+    containerSize: Dp,
+    isCompact: Boolean,
+    isLandscape: Boolean
 ) {
-    // Animation values
+    // Responsive animations
     val animatedScale by animateFloatAsState(
-        targetValue = if (selected) 1.05f else 1f,
+        targetValue = if (selected) 1.08f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
-        )
+        ),
+        label = "scale_animation"
     )
 
     val animatedElevation by animateDpAsState(
-        targetValue = if (selected) 8.dp else 2.dp,
-        animationSpec = tween(300)
+        targetValue = if (selected) {
+            if (isCompact) 6.dp else 8.dp
+        } else {
+            if (isCompact) 2.dp else 3.dp
+        },
+        animationSpec = tween(200),
+        label = "elevation_animation"
     )
+
+    // Container width calculation for proper spacing
+    val itemWidth = when {
+        isLandscape && isCompact -> 65.dp
+        isCompact -> 70.dp
+        else -> 80.dp
+    }
 
     Column(
         modifier = Modifier
-            .width(75.dp) // Increased width for better spacing with 4 items
-            .height(80.dp) // Increased height
+            .width(itemWidth)
+            .fillMaxHeight()
             .clickable(
                 onClick = onClick,
                 indication = null,
@@ -623,10 +840,11 @@ fun EnhancedNavItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Icon container with enhanced visibility
+        // Adaptive icon container
         Card(
-            modifier = Modifier
-                .size(if (selected) 48.dp else 44.dp), // Increased size
+            modifier = Modifier.size(
+                if (selected) containerSize + 2.dp else containerSize
+            ),
             shape = CircleShape,
             colors = CardDefaults.cardColors(
                 containerColor = if (selected) {
@@ -644,7 +862,9 @@ fun EnhancedNavItem(
                 Icon(
                     painter = painterResource(id = item.icon),
                     contentDescription = item.title,
-                    modifier = Modifier.size(if (selected) 26.dp else 24.dp), // Increased icon size
+                    modifier = Modifier.size(
+                        if (selected) iconSize + 2.dp else iconSize
+                    ),
                     tint = if (selected) {
                         Color.White
                     } else {
@@ -654,36 +874,22 @@ fun EnhancedNavItem(
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp)) // Increased spacing
-
-        // Enhanced text label with proper sizing
-        Text(
-            text = item.title,
-            fontSize = if (selected) 12.sp else 11.sp, // Increased text size
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            color = if (selected) {
-                Color(0xFF667eea)
-            } else {
-                Color(0xFF64748B)
-            },
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Selection indicator
+        // Adaptive selection indicator
         if (selected) {
-            Spacer(modifier = Modifier.height(3.dp))
+            Spacer(modifier = Modifier.height(
+                if (isLandscape && isCompact) 3.dp else 4.dp
+            ))
             Box(
                 modifier = Modifier
-                    .width(8.dp) // Increased indicator width
-                    .height(3.dp) // Increased indicator height
+                    .size(
+                        if (isLandscape && isCompact) 4.dp else 5.dp
+                    )
                     .background(
                         Color(0xFF667eea),
-                        RoundedCornerShape(1.5.dp)
+                        CircleShape
                     )
             )
         }
     }
 }
+

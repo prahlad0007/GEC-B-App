@@ -1,5 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="Theme.GECBAdminApp" parent="android:Theme.Material.Light.NoActionBar">
+         <item name="android:windowSplashScreenBackground">#764ba2</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowDisablePreview">true</item>
+<!--        <item name="android:windowIsTranslucent">true</item> &lt;!&ndash; REMOVE THIS &ndash;&gt;-->
 
-    <style name="Theme.GECBAdminApp" parent="android:Theme.Material.Light.NoActionBar" />
+    </style>
 </resources>

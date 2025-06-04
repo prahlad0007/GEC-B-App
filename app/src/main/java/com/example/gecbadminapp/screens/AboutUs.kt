@@ -15,11 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -27,9 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gecbadminapp.R
-import kotlinx.coroutines.delay
 
-// Data class for social links
+// Data classes
 data class SocialLink(
     val icon: ImageVector,
     val title: String,
@@ -38,7 +38,6 @@ data class SocialLink(
     val action: () -> Unit
 )
 
-// Data class for skills
 data class Skill(
     val name: String,
     val level: Float,
@@ -48,22 +47,24 @@ data class Skill(
 @Composable
 fun AboutUs() {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp < 400
     val scrollState = rememberScrollState()
 
-    // Animated gradient colors
+    // Clean gradient colors matching your theme
     val gradientColors = listOf(
         Color(0xFF667eea),
         Color(0xFF764ba2),
         Color(0xFFF093FB)
     )
 
-    // Floating animation
+    // Simple floating animation
     val infiniteTransition = rememberInfiniteTransition(label = "floating")
     val floatingOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 10f,
+        targetValue = 8f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
+            animation = tween(2500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "floating"
@@ -71,14 +72,12 @@ fun AboutUs() {
 
     // Skills data
     val skills = listOf(
-        Skill("Competitive Programming", 0.9f, Color(0xFF10B981)),
-        Skill("Native App Development", 0.85f, Color(0xFF3B82F6)),
-        Skill("Cross Platform App Development", 0.8f, Color(0xFFF59E0B)),
-        Skill("Backend Development", 0.75f, Color(0xFF8B5CF6))
+        Skill("Competitive Programming", 0.95f, Color(0xFF10B981)),
+        Skill("Android Development", 0.90f, Color(0xFF3B82F6)),
+        Skill("Cross Platform Dev", 0.85f, Color(0xFFF59E0B)),
+        Skill("Backend Development", 0.80f, Color(0xFF8B5CF6)),
+
     )
-
-
-
 
     // Social links
     val socialLinks = listOf(
@@ -103,7 +102,7 @@ fun AboutUs() {
         SocialLink(
             Icons.Default.Link,
             "LinkedIn",
-            "Connect with me",
+            "Connect professionally",
             Color(0xFF0077B5)
         ) {
             val intent = Intent(
@@ -119,6 +118,11 @@ fun AboutUs() {
             Color(0xFF1F2937)
         ) {
             // Add GitHub link when available
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://github.com/Prahlad-07")
+            )
+            context.startActivity(intent)
         }
     )
 
@@ -126,9 +130,7 @@ fun AboutUs() {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    colors = gradientColors
-                )
+                Brush.verticalGradient(colors = gradientColors)
             )
     ) {
         Column(
@@ -136,42 +138,36 @@ fun AboutUs() {
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            // Enhanced Header Section
+            // Header Section
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(if (isSmallScreen) 20.dp else 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Text(
-                    text = "Meet the Developer",
-                    fontSize = 16.sp,
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontWeight = FontWeight.Medium
-                )
-
+                // Title
                 Text(
                     text = "About Me",
-                    fontSize = 32.sp,
+                    fontSize = if (isSmallScreen) 28.sp else 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // Floating Profile Image with enhanced styling
+                // Profile Image
                 Card(
                     shape = CircleShape,
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(16.dp),
+                    elevation = CardDefaults.cardElevation(12.dp),
                     modifier = Modifier.offset(y = floatingOffset.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(160.dp)
-                            .padding(8.dp)
+                            .size(if (isSmallScreen) 140.dp else 160.dp)
+                            .padding(6.dp)
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.prahlad),
@@ -182,10 +178,10 @@ fun AboutUs() {
                             contentScale = ContentScale.Crop
                         )
 
-                        // Online status indicator
+                        // Status indicator
                         Box(
                             modifier = Modifier
-                                .size(20.dp)
+                                .size(18.dp)
                                 .background(Color(0xFF10B981), CircleShape)
                                 .border(3.dp, Color.White, CircleShape)
                                 .align(Alignment.BottomEnd)
@@ -195,10 +191,10 @@ fun AboutUs() {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Enhanced Name Card
+                // Name Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White.copy(alpha = 0.15f)
                     ),
@@ -212,19 +208,19 @@ fun AboutUs() {
                     ) {
                         Text(
                             text = "Prahlad Yadav",
-                            fontSize = 28.sp,
+                            fontSize = if (isSmallScreen) 24.sp else 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
 
                         Text(
                             text = "Software Engineer (MIDAS)",
-                            fontSize = 16.sp,
+                            fontSize = if (isSmallScreen) 14.sp else 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White.copy(alpha = 0.9f)
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Row(
                             horizontalArrangement = Arrangement.Center,
@@ -239,7 +235,7 @@ fun AboutUs() {
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Information Technology | 2022 – 2026",
-                                fontSize = 14.sp,
+                                fontSize = if (isSmallScreen) 12.sp else 14.sp,
                                 color = Color.White.copy(alpha = 0.8f)
                             )
                         }
@@ -247,91 +243,46 @@ fun AboutUs() {
                 }
             }
 
-            // Main Content Card
+            // Main Content
             Card(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                elevation = CardDefaults.cardElevation(8.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(20.dp)
                 ) {
-                    // About Me Section
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(8.dp)
+                    // About Section
+                    SectionCard(
+                        title = "About Me",
+                        icon = Icons.Default.Person,
+                        iconColor = Color(0xFF667eea)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Person,
-                                    contentDescription = "About",
-                                    tint = Color(0xFF667eea),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "About Me",
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1F2937)
-                                )
-                            }
-
-                            Text(
-                                text = "I'm a passionate Software Engineer specializing in Android development and modern mobile technologies. Currently pursuing Information Technology at Government Engineering College Bilaspur, I love creating innovative solutions that make a difference. With expertise in Kotlin, Firebase, and modern UI frameworks, I'm dedicated to building user-friendly applications that solve real-world problems.",
-                                fontSize = 15.sp,
-                                color = Color(0xFF6B7280),
-                                lineHeight = 22.sp,
-                                textAlign = TextAlign.Justify
-                            )
-                        }
+                        Text(
+                            text = "Hey! I'm an Android and backend-focused Software Engineer who loves building clean, intuitive apps with scalable backends that actually solve real problems. I'm currently studying IT at Government Engineering College Bilaspur, and when I'm not coding, you'll probably find me deep into competitive programming — ranked in the top 1% across all major platforms."
+                            , fontSize = 15.sp,
+                            color = Color(0xFF6B7280),
+                            lineHeight = 22.sp,
+                            textAlign = TextAlign.Justify
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
                     // Skills Section
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(8.dp)
+                    SectionCard(
+                        title = "Skills",
+                        icon = Icons.Default.Stars,
+                        iconColor = Color(0xFF10B981)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 20.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Stars,
-                                    contentDescription = "Skills",
-                                    tint = Color(0xFF10B981),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "Technical Skills",
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1F2937)
-                                )
-                            }
-
-                            skills.forEach { skill ->
-                                SkillBar(skill = skill)
+                        skills.forEach { skill ->
+                            SkillItem(skill = skill, isSmallScreen = isSmallScreen)
+                            if (skill != skills.last()) {
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
@@ -339,96 +290,52 @@ fun AboutUs() {
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Contact Section
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(8.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.ContactMail,
-                                    contentDescription = "Contact",
-                                    tint = Color(0xFF3B82F6),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "Get In Touch",
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1F2937)
-                                )
-                            }
 
-                            socialLinks.forEach { link ->
-                                EnhancedContactCard(link = link)
+
+                    // Contact Section
+                    SectionCard(
+                        title = "Get In Touch",
+                        icon = Icons.Default.ContactMail,
+                        iconColor = Color(0xFF3B82F6)
+                    ) {
+                        socialLinks.forEach { link ->
+                            ContactItem(link = link, isSmallScreen = isSmallScreen)
+                            if (link != socialLinks.last()) {
                                 Spacer(modifier = Modifier.height(12.dp))
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Achievement Section
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(8.dp)
+                    Spacer(modifier = Modifier.height(32.dp))
+                    // Achievements Section
+                    SectionCard(
+                        title = "Achievements",
+                        icon = Icons.Default.EmojiEvents,
+                        iconColor = Color(0xFFF59E0B)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp)
-                        ) {
+                        val achievements = listOf(
+                            "🏆 Developed Complete GECB Admin App",
+                            "🔥 Top 1% Competitive Programmer",
+                            "📱 Mobile App Development Specialist"
+                        )
+
+
+                        achievements.forEach { achievement ->
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 16.dp)
+                                modifier = Modifier.padding(vertical = 6.dp),
+                                verticalAlignment = Alignment.Top
                             ) {
-                                Icon(
-                                    Icons.Default.EmojiEvents,
-                                    contentDescription = "Achievements",
-                                    tint = Color(0xFFF59E0B),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = "Achievements",
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1F2937)
+                                    text = achievement,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF6B7280),
+                                    lineHeight = 20.sp
                                 )
-                            }
-
-                            val achievements = listOf(
-                                "🏆 Developed GECB Admin App",
-                                "📱 Android Development Specialist",
-                                "🔥 Firebase Integration Expert",
-                                "🎨 Modern UI/UX Designer"
-                            )
-
-                            achievements.forEach { achievement ->
-                                Row(
-                                    modifier = Modifier.padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = achievement,
-                                        fontSize = 15.sp,
-                                        color = Color(0xFF6B7280)
-                                    )
-                                }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
@@ -436,7 +343,46 @@ fun AboutUs() {
 }
 
 @Composable
-fun SkillBar(skill: Skill) {
+fun SectionCard(
+    title: String,
+    icon: ImageVector,
+    iconColor: Color,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = iconColor,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = title,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1F2937)
+                )
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+fun SkillItem(skill: Skill, isSmallScreen: Boolean) {
     val animatedProgress by animateFloatAsState(
         targetValue = skill.level,
         animationSpec = tween(1000, easing = FastOutSlowInEasing),
@@ -451,13 +397,13 @@ fun SkillBar(skill: Skill) {
         ) {
             Text(
                 text = skill.name,
-                fontSize = 16.sp,
+                fontSize = if (isSmallScreen) 14.sp else 15.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF1F2937)
             )
             Text(
                 text = "${(skill.level * 100).toInt()}%",
-                fontSize = 14.sp,
+                fontSize = if (isSmallScreen) 12.sp else 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = skill.color
             )
@@ -468,34 +414,34 @@ fun SkillBar(skill: Skill) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(8.dp)
-                .background(Color(0xFFE5E7EB), RoundedCornerShape(4.dp))
+                .height(6.dp)
+                .background(Color(0xFFE5E7EB), RoundedCornerShape(3.dp))
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(animatedProgress)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(skill.color, skill.color.copy(alpha = 0.7f))
-                        ),
-                        RoundedCornerShape(4.dp)
-                    )
+                    .background(skill.color, RoundedCornerShape(3.dp))
             )
         }
     }
 }
 
 @Composable
-fun EnhancedContactCard(link: SocialLink) {
+fun ContactItem(link: SocialLink, isSmallScreen: Boolean) {
+    var isPressed by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { link.action() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        border = BorderStroke(1.dp, link.color.copy(alpha = 0.1f))
+            .clickable {
+                link.action()
+                isPressed = true
+            }
+            .scale(if (isPressed) 0.98f else 1f),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -505,7 +451,7 @@ fun EnhancedContactCard(link: SocialLink) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(40.dp)
                     .background(link.color.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
@@ -513,7 +459,7 @@ fun EnhancedContactCard(link: SocialLink) {
                     imageVector = link.icon,
                     contentDescription = link.title,
                     tint = link.color,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
@@ -524,13 +470,13 @@ fun EnhancedContactCard(link: SocialLink) {
             ) {
                 Text(
                     text = link.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = if (isSmallScreen) 14.sp else 15.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF1F2937)
                 )
                 Text(
                     text = link.subtitle,
-                    fontSize = 14.sp,
+                    fontSize = if (isSmallScreen) 12.sp else 13.sp,
                     color = Color(0xFF6B7280)
                 )
             }
@@ -539,8 +485,15 @@ fun EnhancedContactCard(link: SocialLink) {
                 Icons.Default.ArrowForward,
                 contentDescription = "Open",
                 tint = link.color,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
+        }
+    }
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            kotlinx.coroutines.delay(100)
+            isPressed = false
         }
     }
 }

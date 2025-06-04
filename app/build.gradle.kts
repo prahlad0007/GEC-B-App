@@ -1,5 +1,5 @@
 plugins {
-    id("com.android.application") version "8.10.0"
+    id("com.android.application") version "8.10.1"
     id("org.jetbrains.kotlin.android") version "2.0.21"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
     id("com.google.gms.google-services") // ✅ Google services plugin added
@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.gecbadminapp"
-        minSdk = 24
+        minSdk = 31
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"

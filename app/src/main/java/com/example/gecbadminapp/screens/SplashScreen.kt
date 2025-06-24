@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -88,6 +89,8 @@ fun SplashScreen(navController: NavController) {
         )
     )
 
+
+
     // Floating animation with sine wave
     val time by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -108,6 +111,9 @@ fun SplashScreen(navController: NavController) {
             repeatMode = RepeatMode.Restart
         )
     )
+
+
+
 
     val innerBorderRotation by infiniteTransition.animateFloat(
         initialValue = 360f,

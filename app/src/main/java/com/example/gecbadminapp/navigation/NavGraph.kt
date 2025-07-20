@@ -1,12 +1,18 @@
 package com.example.gecbadminapp.navigation
 
-
 import Faculty
+import Routes
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.gecbadminapp.admin.Screens.*
+import com.example.gecbadminapp.admin.Screens.Club.ManageCulturalClub
+import com.example.gecbadminapp.admin.Screens.Club.ManageGDSC
+import com.example.gecbadminapp.admin.Screens.Club.ManageINT64_T
+import com.example.gecbadminapp.admin.Screens.Club.ManageNSS
+import com.example.gecbadminapp.admin.Screens.Club.ManageSportClub
+import com.example.gecbadminapp.admin.Screens.Club.ManageTpoCell
 import com.example.gecbadminapp.screens.*
 import com.example.gecbadminapp.screens.GECB_Communities.CommunityScreen
 
@@ -23,9 +29,7 @@ fun NavGraph(navController: NavHostController) {
 
         // Authentication
         composable(Routes.Login.route) {
-
-                LoginScreen(navController)
-
+            LoginScreen(navController)
         }
 
         composable(Routes.Register.route) {
@@ -57,10 +61,35 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.ManageFaculty.route) {
             ManageFaculty()
         }
+
+        // Fixed: Call the actual ManageEvents composable function
         composable(Routes.ManageEvents.route) {
-            ManageEvents()
+            ManageEvents(navController)
+        }
+        // Individual community management screens
+        composable("ManageNSS") {
+            ManageNSS()
         }
 
+        composable("ManageINT64_T") {
+            ManageINT64_T()
+        }
+
+        composable("ManageCulturalClub") {
+            ManageCulturalClub()
+        }
+
+        composable("ManageSportClub") {
+            ManageSportClub()
+        }
+
+        composable("ManageTpoCell") {
+            ManageTpoCell()
+        }
+
+        composable("ManageGDSC") {
+            ManageGDSC()
+        }
 
         composable(Routes.Settings.route) {
             SettingsScreen(

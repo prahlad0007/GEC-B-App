@@ -2,7 +2,7 @@ plugins {
     id("com.android.application") version "8.10.1"
     id("org.jetbrains.kotlin.android") version "2.0.21"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
-    id("com.google.gms.google-services") // ✅ Google services plugin added
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -64,6 +64,12 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-appcheck-debug:17.0.0")
+    implementation("com.google.firebase:firebase-appcheck:17.0.0")
+    implementation("com.google.firebase:firebase-appcheck-debug:17.0.0")
+    implementation("com.google.firebase:firebase-appcheck-playintegrity:17.0.0")
+
+
 
     // ✅ Hilt
     implementation("com.google.dagger:hilt-android:2.50")
@@ -75,6 +81,7 @@ dependencies {
 
     // ✅ Optional: Accompanist WebView
     implementation("com.google.accompanist:accompanist-webview:0.34.0")
+    implementation(libs.androidx.core.splashscreen)
 
     // ✅ Testing
     testImplementation(libs.junit)

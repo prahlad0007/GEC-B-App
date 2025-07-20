@@ -16,6 +16,7 @@ hiltNavCompose = "1.2.0"
 coil = "2.6.0"
 accompanistWebview = "0.34.0"
 googleServices = "4.4.2"
+coreSplashscreen = "1.0.1"
 
 [libraries]
 # Core AndroidX
@@ -58,6 +59,7 @@ accompanist-webview = { group = "com.google.accompanist", name = "accompanist-we
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

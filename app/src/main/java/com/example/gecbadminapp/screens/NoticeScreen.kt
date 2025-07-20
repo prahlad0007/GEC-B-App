@@ -8,9 +8,10 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -19,336 +20,227 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
-import com.example.gecbadminapp.R
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Optimized Data Classes
 data class NoticeData(
     val id: String = "",
     val title: String = "",
     val description: String = "",
-    val category: String = "",
+    val category: String = "General",
     val priority: String = "Normal",
     val pdfUrl: String = "",
     val publishDate: String = "",
     val publishedBy: String = "",
+    val department: String = "",
     val isActive: Boolean = true,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val viewCount: Int = 0,
+    val isStarred: Boolean = false
 )
 
+data class NoticeState(
+    val notices: List<NoticeData> = emptyList(),
+    val isLoading: Boolean = true,
+    val searchQuery: String = "",
+    val selectedCategory: String = "All",
+    val selectedNotice: NoticeData? = null,
+    val showSearchBar: Boolean = false,
+    val sortBy: SortOption = SortOption.NEWEST
+)
+
+enum class SortOption(val label: String) {
+    NEWEST("Newest"), OLDEST("Oldest"), PRIORITY("Priority"), TITLE("A-Z")
+}
+
+// Consolidated Configuration
+object Config {
+    val categories = listOf("All", "Academic", "Examination", "Events", "General", "Urgent", "Placement", "Library", "Sports", "Cultural", "Administrative")
+
+    val categoryData = mapOf(
+        "Academic" to Pair(Icons.Outlined.School, Color(0xFF3B82F6)),
+        "Examination" to Pair(Icons.Outlined.Quiz, Color(0xFF8B5CF6)),
+        "Events" to Pair(Icons.Outlined.Event, Color(0xFF10B981)),
+        "General" to Pair(Icons.Outlined.Info, Color(0xFF6B7280)),
+        "Urgent" to Pair(Icons.Outlined.PriorityHigh, Color(0xFFEF4444)),
+        "Placement" to Pair(Icons.Outlined.Work, Color(0xFFF59E0B)),
+        "Library" to Pair(Icons.Outlined.MenuBook, Color(0xFF06B6D4)),
+        "Sports" to Pair(Icons.Outlined.SportsBasketball, Color(0xFFEC4899)),
+        "Cultural" to Pair(Icons.Outlined.Palette, Color(0xFF8B5CF6)),
+        "Administrative" to Pair(Icons.Outlined.Business, Color(0xFF6366F1))
+    )
+
+    val priorityColors = mapOf(
+        "High" to Pair(Color(0xFFEF4444), Color(0xFFFEE2E2)),
+        "Medium" to Pair(Color(0xFFF59E0B), Color(0xFFFEF3C7)),
+        "Normal" to Pair(Color(0xFF10B981), Color(0xFFD1FAE5))
+    )
+
+    object Colors {
+        val Primary = Color(0xFF667eea)
+        val Secondary = Color(0xFF764ba2)
+        val Surface = Color(0xFFFAFBFC)
+        val OnSurface = Color(0xFF1F2937)
+        val OnSurfaceVariant = Color(0xFF6B7280)
+    }
+}
+
+// Main Screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoticeScreen() {
-    var noticeList by remember { mutableStateOf<List<NoticeData>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("All") }
-    var selectedNotice by remember { mutableStateOf<NoticeData?>(null) }
-    var showSearchBar by remember { mutableStateOf(false) }
-
+    var state by remember { mutableStateOf(NoticeState()) }
     val context = LocalContext.current
-    val categories = listOf("All", "Academic", "Examination", "Events", "General", "Urgent", "Placement")
-
-    // Enhanced animation for loading
-    val infiniteTransition = rememberInfiniteTransition()
-    val shimmerAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
 
     LaunchedEffect(Unit) {
-        loadNoticeData { notices ->
-            noticeList = notices.filter { it.isActive }
-                .sortedWith(
-                    compareByDescending<NoticeData> {
-                        when (it.priority) {
-                            "High" -> 3
-                            "Medium" -> 2
-                            "Normal" -> 1
-                            else -> 0
-                        }
-                    }.thenByDescending { it.createdAt }
-                )
-            isLoading = false
+        NoticeRepository.loadNotices { notices ->
+            state = state.copy(notices = notices.filter { it.isActive }.sortedWith(getSortComparator(state.sortBy)), isLoading = false)
         }
     }
 
-    val filteredNotices = noticeList.filter { notice ->
-        val matchesSearch = notice.title.contains(searchQuery, ignoreCase = true) ||
-                notice.description.contains(searchQuery, ignoreCase = true) ||
-                notice.publishedBy.contains(searchQuery, ignoreCase = true)
-        val matchesCategory = selectedCategory == "All" || notice.category == selectedCategory
-        matchesSearch && matchesCategory
+    val filteredNotices = remember(state.notices, state.searchQuery, state.selectedCategory, state.sortBy) {
+        state.notices.filter { notice ->
+            val matchesSearch = state.searchQuery.isEmpty() ||
+                    listOf(notice.title, notice.description, notice.publishedBy, notice.department)
+                        .any { it.contains(state.searchQuery, true) }
+            val matchesCategory = state.selectedCategory == "All" || notice.category == state.selectedCategory
+            matchesSearch && matchesCategory
+        }.sortedWith(getSortComparator(state.sortBy))
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF667eea),
-                        Color(0xFF764ba2),
-                        Color(0xFFF093FB)
-                    )
-                )
-            )
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
+    Column(modifier = Modifier.fillMaxSize().background(Config.Colors.Surface)) {
+        NoticeHeader(
+            state = state,
+            noticeCount = filteredNotices.size,
+            onSearchToggle = { state = state.copy(showSearchBar = !state.showSearchBar) },
+            onSearchChange = { state = state.copy(searchQuery = it) }
+        )
+
+        AnimatedVisibility(
+            visible = !state.showSearchBar,
+            enter = slideInVertically() + fadeIn(),
+            exit = slideOutVertically() + fadeOut()
         ) {
-            // Enhanced Header Section
-            EnhancedNoticeHeader(
-                showSearch = showSearchBar,
-                onSearchToggle = { showSearchBar = !showSearchBar },
-                searchQuery = searchQuery,
-                onSearchChange = { searchQuery = it },
-                noticeCount = filteredNotices.size
+            CategoryFilter(
+                selectedCategory = state.selectedCategory,
+                onCategoryChange = { state = state.copy(selectedCategory = it) }
             )
-
-            // Category Filter Section
-            if (!showSearchBar) {
-                CategoryFilterSection(
-                    categories = categories,
-                    selectedCategory = selectedCategory,
-                    onCategoryChange = { selectedCategory = it }
-                )
-            }
-
-            // Main Content
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-            ) {
-                when {
-                    isLoading -> {
-                        EnhancedLoadingView(shimmerAlpha)
-                    }
-                    filteredNotices.isEmpty() -> {
-                        EnhancedEmptyNoticeView(selectedCategory, searchQuery)
-                    }
-                    else -> {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            contentPadding = PaddingValues(vertical = 16.dp)
-                        ) {
-                            // High Priority Notices Section
-                            val highPriorityNotices = filteredNotices.filter { it.priority == "High" }
-                            if (highPriorityNotices.isNotEmpty()) {
-                                item {
-                                    PrioritySection(
-                                        title = "🚨 Urgent Notices",
-                                        notices = highPriorityNotices,
-                                        onNoticeClick = { selectedNotice = it }
-                                    )
-                                }
-                            }
-
-                            // Regular Notices
-                            val regularNotices = filteredNotices.filter { it.priority != "High" }
-                            items(regularNotices) { notice ->
-                                EnhancedNoticeCard(
-                                    notice = notice,
-                                    onClick = { selectedNotice = it }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
 
-        // Notice Detail Dialog
-        selectedNotice?.let { notice ->
+        NoticeContent(
+            isLoading = state.isLoading,
+            notices = filteredNotices,
+            onNoticeClick = { state = state.copy(selectedNotice = it) }
+        )
+
+        state.selectedNotice?.let { notice ->
             NoticeDetailDialog(
                 notice = notice,
-                onDismiss = { selectedNotice = null },
-                onOpenPdf = { url ->
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Unable to open PDF", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                onDismiss = { state = state.copy(selectedNotice = null) },
+                context = context
             )
         }
     }
 }
 
 @Composable
-fun EnhancedNoticeHeader(
-    showSearch: Boolean,
+private fun NoticeHeader(
+    state: NoticeState,
+    noticeCount: Int,
     onSearchToggle: () -> Unit,
-    searchQuery: String,
-    onSearchChange: (String) -> Unit,
-    noticeCount: Int
+    onSearchChange: (String) -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(12.dp),
-        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f))
+        modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
+        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+        colors = CardDefaults.cardColors(Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp)
+        Box(
+            modifier = Modifier.fillMaxWidth().background(
+                Brush.horizontalGradient(listOf(Config.Colors.Primary, Config.Colors.Secondary))
+            )
         ) {
-            if (!showSearch) {
-                // Header with college info
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Card(
-                            shape = CircleShape,
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF667eea).copy(alpha = 0.1f)
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.Campaign,
-                                contentDescription = null,
-                                tint = Color(0xFF667eea),
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .padding(8.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column {
-                            Text(
-                                text = "Notice Board",
-                                color = Color(0xFF1F2937),
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Government Engineering College",
-                                color = Color(0xFF6B7280),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = onSearchToggle,
-                        modifier = Modifier
-                            .background(
-                                Color(0xFF667eea).copy(alpha = 0.1f),
-                                CircleShape
-                            )
+            Column(modifier = Modifier.padding(24.dp)) {
+                if (!state.showSearchBar) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = Color(0xFF667eea)
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier.size(48.dp).background(Color.White.copy(0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Campaign, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text("Notice Board", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Government Engineering College", fontSize = 14.sp, color = Color.White.copy(0.8f))
+                            }
+                        }
+                        IconButton(onClick = onSearchToggle) {
+                            Icon(Icons.Default.Search, "Search", tint = Color.White)
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Notice count and status
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF10B981).copy(alpha = 0.1f)
-                        ),
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Surface(
+                        color = Config.Colors.Primary.copy(0.2f),
                         shape = RoundedCornerShape(20.dp)
                     ) {
-                        Text(
-                            text = "$noticeCount Active Notices",
-                            color = Color(0xFF10B981),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Notifications, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("$noticeCount Active", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val currentTime = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-                            .format(Date())
-                        Icon(
-                            Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = Color(0xFF6B7280),
-                            modifier = Modifier.size(16.dp)
+                } else {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = onSearchChange,
+                            placeholder = { Text("Search notices...", color = Color.White.copy(0.7f)) },
+                            leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.White.copy(0.8f)) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.White,
+                                unfocusedBorderColor = Color.White.copy(0.5f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            )
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = currentTime,
-                            color = Color(0xFF6B7280),
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            } else {
-                // Search Mode
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = onSearchChange,
-                        placeholder = { Text("Search notices...") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null)
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF667eea),
-                            unfocusedBorderColor = Color(0xFFE5E7EB)
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    IconButton(onClick = onSearchToggle) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Close Search",
-                            tint = Color(0xFF6B7280)
-                        )
+                        IconButton(onClick = onSearchToggle) {
+                            Icon(Icons.Default.Close, "Close", tint = Color.White)
+                        }
                     }
                 }
             }
@@ -357,56 +249,32 @@ fun EnhancedNoticeHeader(
 }
 
 @Composable
-fun CategoryFilterSection(
-    categories: List<String>,
-    selectedCategory: String,
-    onCategoryChange: (String) -> Unit
-) {
+private fun CategoryFilter(selectedCategory: String, onCategoryChange: (String) -> Unit) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        items(categories) { category ->
+        items(Config.categories) { category ->
             val isSelected = selectedCategory == category
-            val backgroundColor by animateColorAsState(
-                targetValue = if (isSelected) Color(0xFF667eea) else Color.White.copy(alpha = 0.9f)
-            )
-            val textColor by animateColorAsState(
-                targetValue = if (isSelected) Color.White else Color(0xFF1F2937)
-            )
+            val (icon, color) = Config.categoryData[category] ?: Pair(Icons.Outlined.Info, Config.Colors.Primary)
 
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = backgroundColor),
-                elevation = CardDefaults.cardElevation(if (isSelected) 8.dp else 4.dp),
+                colors = CardDefaults.cardColors(if (isSelected) color else Color.White),
+                elevation = CardDefaults.cardElevation(if (isSelected) 6.dp else 2.dp),
                 modifier = Modifier.clickable { onCategoryChange(category) }
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val icon = when (category) {
-                        "Academic" -> Icons.Default.School
-                        "Examination" -> Icons.Default.Quiz
-                        "Events" -> Icons.Default.Event
-                        "General" -> Icons.Default.Info
-                        "Urgent" -> Icons.Default.PriorityHigh
-                        "Placement" -> Icons.Default.Work
-                        else -> Icons.Default.ViewList
-                    }
-
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = textColor,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(icon, null, tint = if (isSelected) Color.White else Config.Colors.OnSurface, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = category,
-                        color = textColor,
+                        category,
+                        color = if (isSelected) Color.White else Config.Colors.OnSurface,
                         fontSize = 14.sp,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                     )
                 }
             }
@@ -415,456 +283,223 @@ fun CategoryFilterSection(
 }
 
 @Composable
-fun PrioritySection(
-    title: String,
-    notices: List<NoticeData>,
-    onNoticeClick: (NoticeData) -> Unit
-) {
-    Column {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFEF4444).copy(alpha = 0.1f)
-            ),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFEF4444)
-                )
+private fun NoticeContent(isLoading: Boolean, notices: List<NoticeData>, onNoticeClick: (NoticeData) -> Unit) {
+    when {
+        isLoading -> LoadingView()
+        notices.isEmpty() -> EmptyView()
+        else -> {
+            val (urgent, high, regular) = notices.partition { it.priority == "High" && it.category == "Urgent" }
+                .let { (urgent, rest) -> Triple(urgent, rest.filter { it.priority == "High" }, rest.filter { it.priority != "High" }) }
 
-                Spacer(modifier = Modifier.height(12.dp))
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(20.dp)
+            ) {
+                if (urgent.isNotEmpty()) {
+                    item { PrioritySection("🚨 Urgent", urgent, Config.Colors.Primary, onNoticeClick) }
+                }
+                if (high.isNotEmpty()) {
+                    item { PrioritySection("⚠️ High Priority", high, Color(0xFFF59E0B), onNoticeClick) }
+                }
+                items(regular, key = { it.id }) { notice -> NoticeCard(notice, onNoticeClick) }
+            }
+        }
+    }
+}
 
-                notices.forEach { notice ->
-                    UrgentNoticeItem(
-                        notice = notice,
-                        onClick = { onNoticeClick(notice) }
-                    )
-                    if (notice != notices.last()) {
-                        Spacer(modifier = Modifier.height(8.dp))
+@Composable
+private fun PrioritySection(title: String, notices: List<NoticeData>, color: Color, onNoticeClick: (NoticeData) -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(color.copy(0.05f)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color)
+            Spacer(modifier = Modifier.height(12.dp))
+            notices.forEach { notice ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable { onNoticeClick(notice) },
+                    colors = CardDefaults.cardColors(Color.White)
+                ) {
+                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(notice.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            Text("${notice.category} • ${notice.department}", fontSize = 12.sp, color = Config.Colors.OnSurfaceVariant)
+                        }
+                        if (notice.pdfUrl.isNotEmpty()) {
+                            Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFFDC2626), modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
+                if (notice != notices.last()) Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
 }
 
 @Composable
-fun UrgentNoticeItem(
-    notice: NoticeData,
-    onClick: () -> Unit
-) {
+private fun NoticeCard(notice: NoticeData, onClick: (NoticeData) -> Unit) {
+    val (priorityTextColor, priorityBgColor) = Config.priorityColors[notice.priority] ?: Pair(Color.Gray, Color.Gray.copy(0.1f))
+    val (categoryIcon, categoryColor) = Config.categoryData[notice.category] ?: Pair(Icons.Outlined.Info, Config.Colors.Primary)
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        modifier = Modifier.fillMaxWidth().clickable { onClick(notice) },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(Color.White),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Default.PriorityHigh,
-                contentDescription = null,
-                tint = Color(0xFFEF4444),
-                modifier = Modifier.size(20.dp)
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = notice.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF1F2937),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = notice.category,
-                    fontSize = 12.sp,
-                    color = Color(0xFF6B7280)
-                )
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(color = priorityBgColor, shape = RoundedCornerShape(12.dp)) {
+                        Text(notice.priority, color = priorityTextColor, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    }
+                    Surface(color = categoryColor.copy(0.1f), shape = RoundedCornerShape(12.dp)) {
+                        Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(categoryIcon, null, tint = categoryColor, modifier = Modifier.size(12.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(notice.category, color = categoryColor, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+                if (notice.pdfUrl.isNotEmpty()) {
+                    Icon(Icons.Default.PictureAsPdf, "PDF", tint = Color(0xFFDC2626), modifier = Modifier.size(24.dp))
+                }
             }
 
-            if (notice.pdfUrl.isNotEmpty()) {
-                Icon(
-                    Icons.Default.PictureAsPdf,
-                    contentDescription = null,
-                    tint = Color(0xFFDC2626),
-                    modifier = Modifier.size(16.dp)
-                )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(notice.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(notice.description, fontSize = 14.sp, color = Config.Colors.OnSurfaceVariant, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text("📅 ${notice.publishDate}", fontSize = 12.sp, color = Config.Colors.OnSurfaceVariant)
+                    if (notice.publishedBy.isNotEmpty()) {
+                        Text("👤 ${notice.publishedBy}", fontSize = 11.sp, color = Config.Colors.OnSurfaceVariant)
+                    }
+                }
+                Icon(Icons.Default.ChevronRight, "View", tint = Config.Colors.Primary)
             }
         }
     }
 }
 
 @Composable
-fun EnhancedNoticeCard(
-    notice: NoticeData,
-    onClick: (NoticeData) -> Unit
-) {
-    val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-    val publishDate = try {
-        dateFormat.format(Date(notice.publishDate.toLong()))
-    } catch (e: Exception) {
-        notice.publishDate
-    }
-
-    val priorityColor = when (notice.priority) {
-        "High" -> Color(0xFFEF4444)
-        "Medium" -> Color(0xFFF59E0B)
-        else -> Color(0xFF10B981)
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick(notice) },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(8.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            // Header with priority and category
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = priorityColor.copy(alpha = 0.1f)
-                        ),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(
-                            text = notice.priority,
-                            color = priorityColor,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF667eea).copy(alpha = 0.1f)
-                        ),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(
-                            text = notice.category,
-                            color = Color(0xFF667eea),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-
-                if (notice.pdfUrl.isNotEmpty()) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFDC2626).copy(alpha = 0.1f)
-                        ),
-                        shape = CircleShape
-                    ) {
-                        Icon(
-                            Icons.Default.PictureAsPdf,
-                            contentDescription = "PDF Available",
-                            tint = Color(0xFFDC2626),
-                            modifier = Modifier
-                                .size(32.dp)
-                                .padding(8.dp)
-                        )
-                    }
-                }
+private fun LoadingView() {
+    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        items(5) {
+            Card(modifier = Modifier.fillMaxWidth().height(150.dp), colors = CardDefaults.cardColors(Color.Gray.copy(0.1f))) {
+                // Shimmer effect placeholder
             }
+        }
+    }
+}
 
+@Composable
+private fun EmptyView() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Outlined.NotificationsNone, null, modifier = Modifier.size(64.dp), tint = Config.Colors.OnSurfaceVariant)
             Spacer(modifier = Modifier.height(16.dp))
+            Text("No Notices Available", fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Text("New notices will appear here", fontSize = 14.sp, color = Config.Colors.OnSurfaceVariant, textAlign = TextAlign.Center)
+        }
+    }
+}
 
-            // Title and Description
-            Text(
-                text = notice.title,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1F2937),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = notice.description,
-                fontSize = 14.sp,
-                color = Color(0xFF6B7280),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                lineHeight = 20.sp
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Footer with date and publisher
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.DateRange,
-                            contentDescription = null,
-                            tint = Color(0xFF6B7280),
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = publishDate,
-                            fontSize = 12.sp,
-                            color = Color(0xFF6B7280),
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    if (notice.publishedBy.isNotEmpty()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(top = 2.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = null,
-                                tint = Color(0xFF6B7280),
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = notice.publishedBy,
-                                fontSize = 11.sp,
-                                color = Color(0xFF6B7280)
-                            )
+@Composable
+private fun NoticeDetailDialog(notice: NoticeData, onDismiss: () -> Unit, context: Context) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Card(
+            modifier = Modifier.fillMaxWidth(0.92f).fillMaxHeight(0.85f),
+            shape = RoundedCornerShape(24.dp)
+        ) {
+            Column {
+                // Header
+                Box(modifier = Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(Config.Colors.Primary, Config.Colors.Secondary)))) {
+                    Row(modifier = Modifier.padding(20.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(notice.title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("${notice.priority} • ${notice.category}", fontSize = 12.sp, color = Color.White.copy(0.8f))
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.Close, "Close", tint = Color.White)
                         }
                     }
                 }
 
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF667eea).copy(alpha = 0.1f)
-                    ),
-                    shape = CircleShape
-                ) {
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = "View Details",
-                        tint = Color(0xFF667eea),
-                        modifier = Modifier
-                            .size(32.dp)
-                            .padding(8.dp)
-                    )
+                // Content
+                LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(20.dp)) {
+                    item {
+                        Text("Description", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(notice.description, fontSize = 14.sp, lineHeight = 20.sp)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Divider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text("Details", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        listOf(
+                            "📅 Published" to notice.publishDate,
+                            "👤 Published by" to notice.publishedBy,
+                            "🏢 Department" to notice.department,
+                            "📋 Category" to notice.category
+                        ).filter { it.second.isNotEmpty() }.forEach { (label, value) ->
+                            Text("$label: $value", fontSize = 14.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
                 }
-            }
-        }
-    }
-}
 
-@Composable
-fun EnhancedLoadingView(shimmerAlpha: Float) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        items(6) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = shimmerAlpha)
-                )
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(0.7f)
-                            .height(20.dp)
-                            .background(
-                                Color.Gray.copy(alpha = shimmerAlpha),
-                                RoundedCornerShape(4.dp)
-                            )
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp)
-                            .background(
-                                Color.Gray.copy(alpha = shimmerAlpha * 0.7f),
-                                RoundedCornerShape(4.dp)
-                            )
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun EnhancedEmptyNoticeView(selectedCategory: String, searchQuery: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(12.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(48.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    if (searchQuery.isNotEmpty()) Icons.Default.SearchOff else Icons.Default.NotificationsNone,
-                    contentDescription = null,
-                    modifier = Modifier.size(80.dp),
-                    tint = Color(0xFF9CA3AF)
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = if (searchQuery.isNotEmpty()) "No Results Found" else "No Notices Available",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1F2937),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = when {
-                        searchQuery.isNotEmpty() -> "Try adjusting your search terms"
-                        selectedCategory != "All" -> "No notices in $selectedCategory category"
-                        else -> "Check back later for new notices"
-                    },
-                    fontSize = 14.sp,
-                    color = Color(0xFF6B7280),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-// SOLUTION 1: Firebase Storage (Recommended)
-// First, upload PDFs to Firebase Storage instead of Cloudinary
-
-// Updated NoticeDetailDialog with multiple PDF opening options
-@Composable
-fun NoticeDetailDialog(
-    notice: NoticeData,
-    onDismiss: () -> Unit,
-    onOpenPdf: (String) -> Unit
-) {
-    val context = LocalContext.current
-    val dateFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
-    val publishDate = try {
-        dateFormat.format(Date(notice.publishDate.toLong()))
-    } catch (e: Exception) {
-        notice.publishDate
-    }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 600.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp)
-            ) {
-                // ... existing header code ...
-
-                // PDF Action Buttons
+                // Actions - Updated with 3 buttons including "Open in Browser"
                 if (notice.pdfUrl.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+                        // First row: Download and Share
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(
+                                onClick = { PdfHandler.openPdf(context, notice.pdfUrl, notice.title) },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Download, null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Download")
+                            }
+                            OutlinedButton(
+                                onClick = { PdfHandler.sharePdf(context, notice.pdfUrl, notice.title) },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Share, null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Share")
+                            }
+                        }
 
-                    // Multiple PDF opening options
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Option 1: Download and Open
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Second row: Open in Browser (full width)
                         Button(
-                            onClick = {
-                                downloadAndOpenPdf(context, notice.pdfUrl, notice.title)
-                            },
+                            onClick = { PdfHandler.openPdfInBrowser(context, notice.pdfUrl) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFDC2626)
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Download,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                                containerColor = Color(0xFF4285F4) // Google blue
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Download & Open PDF")
-                        }
-
-                        // Option 2: Open in Browser
-                        OutlinedButton(
-                            onClick = {
-                                openPdfInBrowser(context, notice.pdfUrl)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            Icon(
-                                Icons.Default.OpenInBrowser,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Icon(Icons.Default.OpenInBrowser, null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Open in Browser")
                         }
-
-                        // Option 3: Share PDF Link
-                        OutlinedButton(
-                            onClick = {
-                                sharePdfLink(context, notice.pdfUrl, notice.title)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Share PDF Link")
-                        }
                     }
                 }
             }
@@ -872,242 +507,110 @@ fun NoticeDetailDialog(
     }
 }
 
-// SOLUTION 2: Download and Open PDF Functions
-fun downloadAndOpenPdf(context: Context, url: String, fileName: String) {
-    try {
-        val request = DownloadManager.Request(Uri.parse(url))
-            .setTitle("$fileName.pdf")
-            .setDescription("Downloading notice PDF...")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "$fileName.pdf")
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
+// Utility Functions
+private fun getSortComparator(sortBy: SortOption): Comparator<NoticeData> = when (sortBy) {
+    SortOption.NEWEST -> compareByDescending { it.createdAt }
+    SortOption.OLDEST -> compareBy { it.createdAt }
+    SortOption.PRIORITY -> compareByDescending<NoticeData> { when (it.priority) { "High" -> 3; "Medium" -> 2; else -> 1 } }.thenByDescending { it.createdAt }
+    SortOption.TITLE -> compareBy { it.title }
+}
 
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val downloadId = downloadManager.enqueue(request)
+// Simplified Repository
+object NoticeRepository {
+    private val db = FirebaseFirestore.getInstance()
 
-        // Listen for download completion
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                if (id == downloadId) {
-                    context.unregisterReceiver(this)
-                    openDownloadedPdf(context, downloadManager, downloadId)
+    fun loadNotices(onResult: (List<NoticeData>) -> Unit) {
+        db.collection("notices")
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { documents ->
+                val notices = documents.mapNotNull { doc ->
+                    try {
+                        NoticeData(
+                            id = doc.id,
+                            title = doc.getString("title") ?: "",
+                            description = doc.getString("description") ?: "",
+                            category = doc.getString("category") ?: "General",
+                            priority = doc.getString("priority") ?: "Normal",
+                            pdfUrl = doc.getString("pdfUrl") ?: "",
+                            publishDate = doc.getString("publishDate") ?: "",
+                            publishedBy = doc.getString("publishedBy") ?: "",
+                            department = doc.getString("department") ?: "",
+                            isActive = doc.getBoolean("isActive") ?: true,
+                            createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis(),
+                            viewCount = doc.getLong("viewCount")?.toInt() ?: 0,
+                            isStarred = doc.getBoolean("isStarred") ?: false
+                        )
+                    } catch (e: Exception) { null }
+                }
+                onResult(notices)
+            }
+            .addOnFailureListener { onResult(emptyList()) }
+    }
+}
+
+// Enhanced PDF Handler with Browser Option
+object PdfHandler {
+    fun openPdf(context: Context, url: String, title: String) {
+        try {
+            val fileName = "${title.replace("[^a-zA-Z0-9]".toRegex(), "_")}.pdf"
+            val request = DownloadManager.Request(Uri.parse(url))
+                .setTitle(fileName)
+                .setDescription("Downloading PDF...")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val downloadId = downloadManager.enqueue(request)
+
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                    if (id == downloadId) {
+                        context.unregisterReceiver(this)
+                        val uri = downloadManager.getUriForDownloadedFile(downloadId)
+                        uri?.let {
+                            val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(it, "application/pdf")
+                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            }
+                            context.startActivity(viewIntent)
+                        }
+                    }
                 }
             }
-        }
 
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            ContextCompat.RECEIVER_NOT_EXPORTED
-        )
-        Toast.makeText(context, "Downloading PDF...", Toast.LENGTH_SHORT).show()
-
-    } catch (e: Exception) {
-        Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_LONG).show()
-    }
-}
-
-fun openDownloadedPdf(context: Context, downloadManager: DownloadManager, downloadId: Long) {
-    try {
-        val uri = downloadManager.getUriForDownloadedFile(downloadId)
-        if (uri != null) {
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/pdf")
-                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                Toast.makeText(context, "No PDF viewer app found", Toast.LENGTH_LONG).show()
-            }
-        }
-    } catch (e: Exception) {
-        Toast.makeText(context, "Failed to open PDF: ${e.message}", Toast.LENGTH_LONG).show()
-    }
-}
-
-// SOLUTION 3: Open in Browser (Most Reliable)
-fun openPdfInBrowser(context: Context, url: String) {
-    try {
-        // Use Google Docs viewer for better compatibility
-        val googleDocsUrl = "https://docs.google.com/gview?embedded=true&url=$url"
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(googleDocsUrl))
-        context.startActivity(intent)
-    } catch (e: Exception) {
-        // Fallback to direct URL
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            context.startActivity(intent)
-        } catch (e2: Exception) {
-            Toast.makeText(context, "Unable to open PDF", Toast.LENGTH_SHORT).show()
+            ContextCompat.registerReceiver(context, receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), ContextCompat.RECEIVER_NOT_EXPORTED)
+            Toast.makeText(context, "Downloading PDF...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
-}
 
-// SOLUTION 4: Share PDF Link
-fun sharePdfLink(context: Context, url: String, title: String) {
-    try {
+    fun sharePdf(context: Context, url: String, title: String) {
         val shareIntent = Intent().apply {
             action = Intent.ACTION_SEND
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, "Check out this notice: $title\n\nPDF Link: $url")
-            putExtra(Intent.EXTRA_SUBJECT, title)
+            putExtra(Intent.EXTRA_SUBJECT, "Notice: $title")
+            putExtra(Intent.EXTRA_TEXT, "$title\n\nView PDF: $url\n\nShared from GEC Notice Board")
         }
-        context.startActivity(Intent.createChooser(shareIntent, "Share PDF Link"))
-    } catch (e: Exception) {
-        Toast.makeText(context, "Unable to share", Toast.LENGTH_SHORT).show()
+        context.startActivity(Intent.createChooser(shareIntent, "Share Notice"))
     }
-}
 
-// SOLUTION 5: Firebase Storage Implementation (Recommended Backend)
-// Replace Cloudinary with Firebase Storage for better Android integration
-
-class NoticeRepository {
-    private val storage = FirebaseStorage.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
-
-    // Upload PDF to Firebase Storage
-    suspend fun uploadPdfToFirebase(pdfUri: Uri, fileName: String): String? {
-        return try {
-            val pdfRef = storage.reference.child("notices/pdfs/$fileName.pdf")
-            pdfRef.putFile(pdfUri).await()
-            pdfRef.downloadUrl.await().toString()
+    fun openPdfInBrowser(context: Context, url: String) {
+        try {
+            // Use Google Docs viewer for better compatibility
+            val googleDocsUrl = "https://docs.google.com/gview?embedded=true&url=$url"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(googleDocsUrl))
+            context.startActivity(intent)
         } catch (e: Exception) {
-            null
-        }
-    }
-
-    // Get direct download URL from Firebase Storage
-    suspend fun getFirebasePdfUrl(fileName: String): String? {
-        return try {
-            val pdfRef = storage.reference.child("notices/pdfs/$fileName.pdf")
-            pdfRef.downloadUrl.await().toString()
-        } catch (e: Exception) {
-            null
-        }
-    }
-}
-
-// SOLUTION 6: In-App PDF Viewer (Advanced Option)
-// Add to build.gradle (Module: app)
-/*
-dependencies {
-    implementation 'com.github.barteksc:android-pdf-viewer:3.2.0-beta.1'
-}
-*/
-
-// PDF Viewer Activity
-/*
-class PdfViewerActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        val pdfUrl = intent.getStringExtra("PDF_URL") ?: return
-        val title = intent.getStringExtra("PDF_TITLE") ?: "PDF Document"
-
-        setContent {
-            PdfViewerScreen(pdfUrl = pdfUrl, title = title)
-        }
-    }
-}
-
-@Composable
-fun PdfViewerScreen(pdfUrl: String, title: String) {
-    var isLoading by remember { mutableStateOf(true) }
-    var pdfFile by remember { mutableStateOf<File?>(null) }
-
-    LaunchedEffect(pdfUrl) {
-        // Download PDF file for viewing
-        downloadPdfForViewing(pdfUrl) { file ->
-            pdfFile = file
-            isLoading = false
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Header
-        TopAppBar(
-            title = { Text(title) },
-            navigationIcon = {
-                IconButton(onClick = { finish() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                }
-            }
-        )
-
-        // PDF Content
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            pdfFile?.let { file ->
-                AndroidView(
-                    factory = { context ->
-                        PDFView(context, null).apply {
-                            fromFile(file)
-                                .defaultPage(0)
-                                .enableSwipe(true)
-                                .swipeHorizontal(false)
-                                .enableDoubletap(true)
-                                .load()
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
+            // Fallback to direct URL
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                context.startActivity(intent)
+            } catch (e2: Exception) {
+                Toast.makeText(context, "Unable to open PDF", Toast.LENGTH_SHORT).show()
             }
         }
     }
-}
-*/
-
-// Required permissions in AndroidManifest.xml
-/*
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-*/
-
-// Function to load notice data from Firestore
-private fun loadNoticeData(onResult: (List<NoticeData>) -> Unit) {
-    val db = FirebaseFirestore.getInstance()
-
-    db.collection("notices")
-        .orderBy("createdAt", Query.Direction.DESCENDING)
-        .get()
-        .addOnSuccessListener { documents ->
-            val notices = mutableListOf<NoticeData>()
-            for (document in documents) {
-                try {
-                    val notice = NoticeData(
-                        id = document.id,
-                        title = document.getString("title") ?: "",
-                        description = document.getString("description") ?: "",
-                        category = document.getString("category") ?: "General",
-                        priority = document.getString("priority") ?: "Normal",
-                        pdfUrl = document.getString("pdfUrl") ?: "",
-                        publishDate = document.getString("publishDate") ?: "",
-                        publishedBy = document.getString("publishedBy") ?: "",
-                        isActive = document.getBoolean("isActive") ?: true,
-                        createdAt = document.getLong("createdAt") ?: System.currentTimeMillis()
-                    )
-                    notices.add(notice)
-                } catch (e: Exception) {
-                    // Handle parsing errors for individual documents
-                    continue
-                }
-            }
-            onResult(notices)
-        }
-        .addOnFailureListener { exception ->
-            // Handle failure case
-            onResult(emptyList())
-        }
 }

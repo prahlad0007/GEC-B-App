@@ -277,7 +277,7 @@ fun ManageTimetable() {
 
                 // Timetable Entries
                 if (isLoading) {
-                    LoadingView()
+                    LoadingVieww()
                 } else if (filteredEntries.isEmpty()) {
                     EmptyTimetableView()
                 } else {
@@ -1072,7 +1072,7 @@ fun DeleteConfirmationDialog(
 }
 
 @Composable
-fun LoadingView() {
+fun LoadingVieww() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

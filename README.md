@@ -13,7 +13,7 @@
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 
-[🚀 **Live Demo**](https://lnkd.in/dQHxcmnv) • [📱 **Screenshots**](https://lnkd.in/dCGGAG6e) • [🏪 **Play Store** *(Coming Soon)*](#)
+[🚀 **Live Demo**](https://lnkd.in/dQHxcmnv) • [📱 **Screenshots**](https://lnkd.in/dCGGAG6e)
 
 ---
 
@@ -316,66 +316,6 @@ gantt
     Documentation           :2023-06-15, 2023-06-30
 ```
 
-### **🏆 Key Milestones Achieved**
-
-<table>
-<tr>
-<td width="50%">
-
-**✅ Development Excellence**
-- 🎯 **Solo Ownership** - End-to-end development responsibility
-- 🏗️ **Modern Architecture** - MVVM with Clean Architecture principles
-- 📱 **Native Performance** - 100% Kotlin with Jetpack Compose
-- 🔥 **Firebase Mastery** - Full ecosystem integration
-- 🎨 **Material Design 3** - Contemporary UI/UX implementation
-
-</td>
-<td width="50%">
-
-**✅ Business Impact**
-- 🎯 **Problem Solver** - Identified and resolved real campus pain points
-- 📈 **User Adoption** - Achieved 100% college community engagement
-- 🏆 **Official Recognition** - Selected as institution's primary app
-- ⚡ **Zero Downtime** - Maintained 99.9% availability since launch
-- 📊 **Measurable ROI** - Quantifiable improvement in communication efficiency
-
-</td>
-</tr>
-</table>
-
----
-
-## 🛠️ Skills Demonstrated
-
-### **🔧 Technical Expertise**
-
-<div align="center">
-
-**Mobile Development** | **Backend Integration** | **UI/UX Design**
-:---:|:---:|:---:
-Advanced Kotlin Programming | Firebase Ecosystem Mastery | Material Design 3 Implementation
-Jetpack Compose Proficiency | Real-time Database Management | Responsive Design Principles
-MVVM Architecture | Cloud Storage Integration | User Experience Optimization
-Performance Optimization | Push Notification Systems | Accessibility Compliance
-
-**Project Management** | **Problem Solving** | **Quality Assurance**
-:---:|:---:|:---:
-Agile Development Methodology | Root Cause Analysis | Comprehensive Testing Strategy
-Timeline Planning & Execution | User-Centered Design Thinking | Performance Monitoring
-Resource Management | Scalable Solution Architecture | Continuous Integration
-Stakeholder Communication | Critical Thinking & Innovation | Code Quality Standards
-
-</div>
-
-### **🌟 Soft Skills Excellence**
-
-- **👑 Leadership**: Led complete project lifecycle independently
-- **🎯 Problem-Solving**: Identified critical communication gaps and engineered solutions
-- **📊 Analytical Thinking**: Used data-driven decisions for feature prioritization  
-- **🤝 Stakeholder Management**: Coordinated with college administration and user community
-- **📚 Continuous Learning**: Mastered new technologies during development
-- **🎨 User Empathy**: Designed intuitive interfaces based on user feedback
-
 ---
 
 ## 🚀 Installation & Quick Start
@@ -488,49 +428,6 @@ cd GEC-B-App
 [![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=web&logoColor=white)](https://yourportfolio.com)
 
 **📍 Location**: Chandigarh, India | **🕐 Timezone**: IST (UTC+5:30)
-
-</div>
-
----
-
-<div align="center">
-
-### 💡 **Development Philosophy**
-
-> *"Every line of code should solve a real problem. Every feature should add genuine value. Every user interaction should feel effortless."*
-
-**This project embodies my commitment to:**
-- 🎯 **Problem-First Development** - Technology serves real needs
-- 🏗️ **Quality Over Quantity** - Robust, maintainable, scalable solutions  
-- 👥 **User-Centric Design** - Intuitive experiences that delight
-- 🚀 **Continuous Innovation** - Always pushing boundaries
-- 📊 **Data-Driven Decisions** - Measurable impact and improvement
-
----
-
-### 🌟 **Impact Statement**
-
-**From Concept to Community Impact**
-
-This application transformed how an entire educational institution communicates, proving that thoughtful technology can solve real-world problems at scale. The journey from identifying scattered communication to delivering a unified digital ecosystem demonstrates the power of problem-focused development.
-
-**Key Success Metrics:**
-- 🎯 **1000+ Daily Active Users** - 100% college adoption
-- ⚡ **99.9% Uptime** - Mission-critical reliability
-- 📈 **Zero Information Silos** - Complete communication unification
-- 🏆 **Official Institution App** - Trusted by administration and students
-
----
-
-### 🚀 **Ready to Build Something Amazing Together?**
-
-If you're looking for a developer who combines technical excellence with real-world problem-solving, let's connect! I'm passionate about creating solutions that make a genuine difference.
-
-**⭐ Star this repository if you find it valuable!**
-
-**🍴 Fork it to explore the codebase and build upon it!**
-
-**💬 Reach out to discuss collaboration opportunities!**
 
 </div>
 
